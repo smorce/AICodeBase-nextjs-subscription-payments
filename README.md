@@ -1,3 +1,57 @@
+## プロジェクトの概要：AICodeBase-nextjs-subscription-payments
+
+このプロジェクトは、Next.js、Supabase、Stripeを活用したサブスクリプション決済システムの構築例です。ユーザー認証、サブスクリプションプランの選択、決済処理、顧客ポータルなどを備えています。
+
+**主要技術:**
+
+* **Next.js:** Reactベースのフレームワークで、サーバーサイドレンダリング、静的サイト生成、APIルートなどの機能を提供します。
+* **Supabase:** オープンソースのFirebase代替として、データベース、認証、ストレージなどのバックエンドサービスを提供します。
+* **Stripe:** オンライン決済プラットフォームで、サブスクリプション管理、請求処理、支払いゲートウェイなどを提供します。
+* **Tailwind CSS:** ユーティリティファーストのCSSフレームワークで、迅速なUI開発を可能にします。
+
+**機能:**
+
+* **ユーザー認証:** Supabase Auth を使用して、メール/パスワード、OAuth (GitHub) 経由のサインアップ/サインイン、パスワードリセット機能を提供します。
+* **サブスクリプションプラン:** Stripe で定義された複数のプランを表示し、ユーザーが選択できるようにします。
+* **決済処理:** Stripe Checkout を使用して、安全な決済処理を行います。
+* **顧客ポータル:** Stripe Customer Portal を統合し、ユーザーがサブスクリプションの管理、請求書の閲覧、支払い方法の更新などを行えるようにします。
+* **Webhook:** Stripe Webhook を使用して、決済イベント（成功、失敗など）を処理し、Supabase データベースを更新します。
+
+**ディレクトリ構造:**
+
+* **app:** Next.js アプリケーションの主要なディレクトリです。ページ、APIルート、サーバーコンポーネントなどを含みます。
+* **components:** 再利用可能なUIコンポーネントを格納します。
+* **fixtures:** テストや開発用のサンプルデータを含みます。
+* **public:** 静的アセット（画像、アイコンなど）を格納します。
+* **styles:** グローバルなスタイルシートを格納します。
+* **supabase:** Supabase 関連の設定ファイル、マイグレーション、シードデータなどを含みます。
+* **utils:** ヘルパー関数、Stripe/Supabase クライアントなどを含みます。
+
+**主要ファイル:**
+
+* **app/page.tsx:** アプリケーションのトップページです。
+* **app/api/webhooks/route.ts:** Stripe Webhook を処理する API ルートです。
+* **app/account/page.tsx:** ユーザーアカウントページです。
+* **components/ui/Pricing/Pricing.tsx:** サブスクリプションプランを表示するコンポーネントです。
+* **utils/stripe/server.ts:** Stripe API を操作するサーバーサイド関数を含みます。
+* **utils/supabase/server.ts:** Supabase データベースを操作するサーバーサイド関数を含みます。
+
+**ワークフロー:**
+
+1. ユーザーがサインアップ/サインインします。
+2. ユーザーがサブスクリプションプランを選択し、Stripe Checkout で決済します。
+3. Stripe Webhook が決済イベントを送信します。
+4. API ルートが Webhook を処理し、Supabase データベースを更新します。
+5. ユーザーは顧客ポータルでサブスクリプションを管理できます。
+
+
+**結論:**
+
+このプロジェクトは、Next.js、Supabase、Stripe を使用してサブスクリプション決済システムを構築する方法を示す包括的な例です。ユーザー認証、プラン選択、決済処理、顧客ポータルなどの主要機能を備えており、実用的なアプリケーションの基盤として活用できます。
+
+
+
+
 # Next.js Subscription Payments Starter
 
 The all-in-one starter kit for high-performance SaaS applications.

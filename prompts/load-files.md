@@ -1,0 +1,21 @@
+Command Instructions:
+  Load these files in order:
+    - Load the actions/example-actions.ts file
+    - Load the actions/stripe-actions.ts file
+    - Load the app/page.tsx file
+    - Load the app/layout.tsx file
+    - Load the app/(auth)/layout.tsx file
+    - Load the app/(auth)/login/page.tsx file
+    - Load the app/(auth)/signup/page.tsx file
+    - Load the app/api/stripe/webhooks/route.ts file
+    - Load the components/header.tsx file
+    - Load the components/utilities/providers.tsx file
+    - Load the db/migrations/0000_XXXXX.sql file
+    - Load the db/queries/example-queries.ts file
+    - Load the db/schema/example-schema.ts file
+    - Load the db/schema/index.ts file
+    - Load the db/db.ts file
+    - Load the lib/stripe.ts file
+    - Load the types/action-types.ts file
+    - Load the types/index.ts file
+    - Load the utils/supabaseClient.ts file
