@@ -50,7 +50,148 @@
 このプロジェクトは、Next.js、Supabase、Stripe を使用してサブスクリプション決済システムを構築する方法を示す包括的な例です。ユーザー認証、プラン選択、決済処理、顧客ポータルなどの主要機能を備えており、実用的なアプリケーションの基盤として活用できます。
 
 
+# 参考サイト
+1. Next.js App Router と Supabase と Stripe のスターターアプリに色んなパターンの環境変数を設定
+  - https://qiita.com/masakinihirota/items/1ae7d17377b8bac524d5
+2. SupabaseとStripeを連携させるNext.jsのサンプルアプリをローカル環境で動かしてみた
+  - https://wp-kyoto.net/try-supabase-by-usgin-vercel-stripe-subscription-example/#google_vignette
 
+基本は(1)のサイトを参考に設定していく。
+
+- GitHub アカウント + CLI のインストール
+- Supabase アカウント + CLI のインストール
+- Vercel アカウント + CLI のインストール
+- Stripe アカウント + CLI のインストール
+
+- example から以下を用意
+  - .env
+  - .env.local
+
+- .gitignoreファイルに登録する
+  - .env*
+
+- GitHub CLI を使ってリポジトリをクローン
+  - gh repo clone vercel/nextjs-subscription-payments 「アプリケーション名」
+  - pnpm install
+
+## Supabase の設定
+- Supabase のダッシュボードからサーバのプロジェクトを作成
+- リポジトリ内にあるschema.sqlの内容をコピーして、SupabaseのSQL Editorに貼り付け実行
+  - drop命令により「破壊的変更～」の警告が出るが初回なので無視してOK
+- ログインテストするために、アプリにログインするユーザーを作成する
+  - Supabase の [Authentication] ページに移動する
+  - [Add user]ボタンをクリックして、メールアドレスとパスワードを登録
+- Supabaseの環境変数の取得
+  - Database Password
+  - Project Settings > General > Reference ID
+  - Project Setting > API > Project URL
+  - Project Setting > API > Project API keys > anon public
+  - Project Setting > API > Project API keys > service_role secret
+  - Project Setting > API > JWT Settings > JWT Secret
+    - この値は、SupabaseのJWTトークンを検証するために使用されるが使わなかった
+  - 以下の URL からアクセストークンを発行する
+    - https://app.supabase.com/account/tokens
+    -「Generate new token」ボタンを押す
+
+## Supabase の確認
+- supabase login 「アクセストークン」
+  - ↑ブラウザが立ち上がり、自動でログインします。(ブラウザの方で認証済みの場合)
+- supabase link --project-ref [Reference ID] -p [Database Password]
+  - ↑ローカルとサーバーのプロジェクトをリンクさせます。
+- リンクされたかどうかの確認
+  - supabase projects list
+
+## Stripe の設定
+- ストライプはテストモードにした後、サンドボックス環境を作成
+- 開発者 > Webhook > Create new endpoint
+  - リッスンするイベントの選択
+    - 全イベントを選択をチェック
+  - エンドポイント URL に Vercel の Domains の方の URL を使用
+    - まだ Vercel にはデプロイしていないのでこのタイミングで以下の hoge(_ではなく-) を決めておく
+      - https://hoge-hoge.vercel.app
+    - ↑このURLに /api/webhooks を追加。これが Endpoint URL になる
+  - Signing secret が STRIPE_WEBHOOK_SECRET になる
+    - STRIPE_WEBHOOK_SECRET については、ローカルで試す場合は「stripe listen --forward-to http://127.0.0.1:3000/api/webhooks」を実行して出てきた「whsec_XXXX」の方を入力する。
+- Stripeの環境変数の取得
+  - ホーム
+    - stripeの公開キー: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+    - stripeの秘密キー: STRIPE_SECRET_KEY
+
+## プラン・料金データの投入
+- StripeとSupabaseそれぞれに投入する。ただし個別にAPIやSQLを実行するのではなく、Stripe Webhook を利用して、Stripe から Supabase にデータを連携させる方法をとる
+- Stripe Webhook がイベントの発火をキャッチする必要があるため、最初に「pnpm run dev」してローカルの Next.js のサーバーを立ち上げておく。Stripe の API を監視するために Webhook も立ち上げておく。fixtures でデータを投入する。
+  - ターミナルを3つ立ち上げて以下を実行する
+    1. pnpm run dev
+    2. stripe listen --forward-to http://127.0.0.1:3000/api/webhooks
+    3. stripe fixtures fixtures/stripe-fixtures.json
+- 以下にアクセスする
+  - https://dashboard.stripe.com/test/products
+    - Freelancer 2件の価格
+    - Hobby 2件の価格
+  - が作成できていればOK
+
+## GitHub 認証の環境変数の取得
+- Developer applications
+  - https://github.com/settings/developers
+  - Application name
+    - supabase_server(適当)
+  - Homepage URL
+    - http://127.0.0.1:3000
+  - Authorization callback URL
+    - https://[Reference ID].supabase.co/auth/v1/callback
+- GitHub 認証の Client ID と Client secret を取得
+
+## GitHub の認証を設定
+- Supabase のサーバーで GitHub 認証を有効化
+  - Authentication | Supabase
+    - https://supabase.com/dashboard/project/_/auth/providers
+    - Authentication > Providers
+    - GitHub を選択して、GitHub enabled に変更
+    - Client ID と Client Secret を取得した値で上書きする
+    - Callback URL (for OAuth) の値をメモ
+
+## .env.local の設定
+```
+# localhost から変更
+NEXT_PUBLIC_SITE_URL="http://127.0.0.1:3000"
+
+# These environment variables are used for Supabase Local Dev
+NEXT_PUBLIC_SUPABASE_URL="https://[Reference ID].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="ey~~~4g"
+SUPABASE_SERVICE_ROLE_KEY="ey~~~G4"
+
+# Get these from Stripe dashboard
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_~~~6j"
+STRIPE_SECRET_KEY="sk_test_~~~6P"
+# stripe listen --forward-to http://127.0.0.1:3000/api/webhooks
+# ローカルで開発しているため、上記を実行して出てきた方を入力した ↓。 ストライプのダッシュボードの webhooks ページにある Signing secret ではない
+STRIPE_WEBHOOK_SECRET="whsec_XXXXXXX"
+```
+
+## .env の設定
+```
+# GitHub認証環境変数
+
+# GitHub認証 Next.jsローカル Supabaseサーバー パターン
+# Application name
+    # vns_template_NextjsLocal_supabaseServer
+SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID="[Client ID]"
+SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET="[Client secret]"
+SUPABASE_AUTH_EXTERNAL_GITHUB_REDIRECT_URI="https://[Reference ID].supabase.co/auth/v1/callback"
+
+
+# GitHub認証 Next.jsローカル  Supabaseローカル パターン
+
+# Application name
+	# vns_template_local
+# SUPABASE_AUTH_EXTERNAL_GITHUB_CLIENT_ID="[Client ID]"
+# SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET="[Client secret]"
+# SUPABASE_AUTH_EXTERNAL_GITHUB_REDIRECT_URI="http://127.0.0.1:54321/auth/v1/callback"
+```
+
+## サンプルページの確認
+- 以下にアクセスしてサンプルの価格が反映されているかどうか確認
+  - http://localhost:3000/
 
 # Next.js Subscription Payments Starter
 
