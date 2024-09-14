@@ -190,6 +190,8 @@ SUPABASE_AUTH_EXTERNAL_GITHUB_REDIRECT_URI="https://[Reference ID].supabase.co/a
 ```
 
 ## サンプルページの確認
+- ローカルの起動コマンド
+  - pnpm run dev
 - 以下にアクセスしてサンプルの価格が反映されているかどうか確認
   - http://localhost:3000/
 
