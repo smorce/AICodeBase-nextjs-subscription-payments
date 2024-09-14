@@ -121,7 +121,7 @@
 - StripeとSupabaseそれぞれに投入する。ただし個別にAPIやSQLを実行するのではなく、Stripe Webhook を利用して、Stripe から Supabase にデータを連携させる方法をとる
 - Stripe Webhook がイベントの発火をキャッチする必要があるため、最初に「pnpm run dev」してローカルの Next.js のサーバーを立ち上げておく。Stripe の API を監視するために Webhook も立ち上げておく。fixtures でデータを投入する。
   - ターミナルを3つ立ち上げて以下を実行する
-    1. pnpm run dev
+    1. pnpm run dev --hostname 0.0.0.0
     2. stripe listen --forward-to http://127.0.0.1:3000/api/webhooks
     3. stripe fixtures fixtures/stripe-fixtures.json
 - 以下にアクセスする
@@ -191,10 +191,26 @@ SUPABASE_AUTH_EXTERNAL_GITHUB_REDIRECT_URI="https://[Reference ID].supabase.co/a
 
 ## サンプルページの確認
 - ローカルの起動コマンド
-  - pnpm run dev
+  - pnpm run dev --hostname 0.0.0.0
+    - なぜ0.0.0.0を指定するのか：0.0.0.0を指定することで、サーバーが全てのネットワークインターフェースでリッスンします。これにより、127.0.0.1（IPv4）でもアクセス可能になります。
+- 課金テストしたい場合は以下も起動
+  - stripe listen --forward-to http://127.0.0.1:3000/api/webhooks
 - 以下にアクセスしてサンプルの価格が反映されているかどうか確認
   - http://localhost:3000/
 
+
+
+## Stripe のテストデータを削除する方法
+https://docs.stripe.com/test-mode<br>
+<br>
+すべてのテストデータを Stripe アカウントから削除するには、次の手順を実行してください。
+
+1. 既存の Stripe アカウントを使用してダッシュボードにログインします。
+2. テストモードで、開発者 > 概要 をクリックします。
+3. テストデータの下にある「テストデータを確認」をクリックします。ダイアログには、既存のすべてのテストデータオブジェクトのリストが表示されます。
+4. 「テストデータを削除」をクリックして削除プロセスを開始します。テストデータの削除は元に戻せません。
+
+削除プロセスを実行中、テスト環境は一時的に利用できなくなります。
 <br>
 <br>
 <br>
