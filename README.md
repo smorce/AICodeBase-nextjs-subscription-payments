@@ -111,7 +111,7 @@
       - https://hoge-hoge.vercel.app
     - ↑このURLに /api/webhooks を追加。これが Endpoint URL になる
   - Signing secret が STRIPE_WEBHOOK_SECRET になる
-    - STRIPE_WEBHOOK_SECRET については、ローカルで試す場合は「stripe listen --forward-to http://127.0.0.1:3000/api/webhooks」を実行して出てきた「whsec_XXXX」の方を入力する。
+    - STRIPE_WEBHOOK_SECRET については、ローカルで試す場合は「stripe listen --forward-to http://127.0.0.1:3000/api/webhooks 」を実行して出てきた「whsec_XXXX」の方を入力する。
 - Stripeの環境変数の取得
   - ホーム
     - stripeの公開キー: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
@@ -196,9 +196,9 @@ SUPABASE_AUTH_EXTERNAL_GITHUB_REDIRECT_URI="https://[Reference ID].supabase.co/a
 - 課金テストしたい場合は以下も起動
   - stripe listen --forward-to http://127.0.0.1:3000/api/webhooks
 - 以下にアクセスしてサンプルの価格が反映されているかどうか確認
-  - http://localhost:3000/
-
-
+  - http://127.0.0.1:3000/
+- コンソールと Stripe のダッシュボードで「Unsupported event type: XXX」のエラーが出る理由
+  - app/api/webhooks/route.ts の relevantEvents で未定義のイベントだから
 
 ## Stripe のテストデータを削除する方法
 https://docs.stripe.com/test-mode<br>

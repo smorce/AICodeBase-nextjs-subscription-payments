@@ -1,3 +1,6 @@
+// relevantEvents セットに含まれるイベントのみを処理する
+// それ以外のイベントは Unsupported event type エラーを返す
+// 上記のエラーはコンソールとStripeのダッシュボードに表示される
 import Stripe from 'stripe';
 import { stripe } from '@/utils/stripe/config';
 import {
