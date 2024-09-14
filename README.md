@@ -50,7 +50,7 @@
 このプロジェクトは、Next.js、Supabase、Stripe を使用してサブスクリプション決済システムを構築する方法を示す包括的な例です。ユーザー認証、プラン選択、決済処理、顧客ポータルなどの主要機能を備えており、実用的なアプリケーションの基盤として活用できます。
 
 
-# 参考サイト
+# 参考サイトと設定手順
 1. Next.js App Router と Supabase と Stripe のスターターアプリに色んなパターンの環境変数を設定
   - https://qiita.com/masakinihirota/items/1ae7d17377b8bac524d5
 2. SupabaseとStripeを連携させるNext.jsのサンプルアプリをローカル環境で動かしてみた
@@ -192,6 +192,11 @@ SUPABASE_AUTH_EXTERNAL_GITHUB_REDIRECT_URI="https://[Reference ID].supabase.co/a
 ## サンプルページの確認
 - 以下にアクセスしてサンプルの価格が反映されているかどうか確認
   - http://localhost:3000/
+
+<br>
+<br>
+<br>
+<br>
 
 # Next.js Subscription Payments Starter
 
