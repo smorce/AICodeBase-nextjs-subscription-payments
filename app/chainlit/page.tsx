@@ -1,15 +1,10 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
-import { getUser } from '@/utils/supabase/queries';
+import React from 'react';
 
-export default async function ChainlitPage() {
-    const supabase = createClient();
-    const user = await getUser(supabase);
-
-    if (!user) {
-        return redirect('/signin');
-    }
-
-    // ユーザーが存在する場合、指定されたURLにリダイレクト
-    return redirect('https://d206-34-173-37-132.ngrok-free.app/');
+export default function ChainlitPage() {
+    return (
+        <div>
+            {/* このページはミドルウェアによってリダイレクトされます */}
+            {/* 必要に応じてここにコンテンツを追加してください */}
+        </div>
+    );
 }
