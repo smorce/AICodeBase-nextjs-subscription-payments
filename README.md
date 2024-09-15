@@ -25,6 +25,9 @@
 先に chainlit を Colab で動かすこと。
 https://colab.research.google.com/drive/1uGcgP0_RxOE9Vxjcc-1MprwcLeGP9Gm6?usp=sharing
 
+そのあと、ミドルウェアの以下を修正する。
+NextResponse.redirect('https://d206-34-173-37-132.ngrok-free.app/');
+
 
 ## done
 - 未ログイン中のユーザーに表示するテンプレートページ「ページ1」の追加
