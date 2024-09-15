@@ -13,6 +13,19 @@
 ## to do
 - docs/project_summary.md に「ページ1、ページ2、ページ3」の説明を追加
 
+## doing
+- development1 を作成した。理由は Chainlit を組み込むため
+  - Page3 を Chainlit のチャットUI に置き換えてみる
+  - development1 に以下をインストールした
+    - npm install @chainlit/react-client
+  - UI として以下を追加
+    - ui/Button/chainlit_button.tsx
+    - ui/Input/chainlit_input.tsx
+
+先に chainlit を Colab で動かすこと。
+https://colab.research.google.com/drive/1uGcgP0_RxOE9Vxjcc-1MprwcLeGP9Gm6?usp=sharing
+
+
 ## done
 - 未ログイン中のユーザーに表示するテンプレートページ「ページ1」の追加
 - ログイン中のユーザーに表示するテンプレートページ「ページ2」の追加
