@@ -6,9 +6,16 @@ import { ChainlitButton } from "@/components/ui/Button";
 import {
   useChatInteract,
   useChatMessages,
-  type IStep,
 } from "@chainlit/react-client";
 import { useState } from "react";
+
+interface IStep {
+  id: string;
+  name: string;
+  type: string;
+  output: string;
+  createdAt: string;
+}
 
 export function Playground() { // 名前付きエクスポート
   const [inputValue, setInputValue] = useState("");

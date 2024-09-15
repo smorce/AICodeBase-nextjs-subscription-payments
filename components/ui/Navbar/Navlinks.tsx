@@ -36,6 +36,9 @@ export default function Navlinks({ user }: NavlinksProps) {
               <Link href="/page3" className={s.link}>
                 ページ3
               </Link>
+              <Link href="/chainlit" className={s.link}>
+                Chainlit
+              </Link>
               <Link href="/account" className={s.link}>
                 Account
               </Link>
