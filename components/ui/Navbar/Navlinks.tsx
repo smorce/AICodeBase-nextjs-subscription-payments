@@ -28,16 +28,18 @@ export default function Navlinks({ user }: NavlinksProps) {
           <Link href="/page1" className={s.link}>
             ページ1
           </Link>
-          <Link href="/page2" className={s.link}>
-            ページ2
-          </Link>
-          <Link href="/page3" className={s.link}>
-            ページ3
-          </Link>
           {user && (
-            <Link href="/account" className={s.link}>
-              Account
-            </Link>
+            <>
+              <Link href="/page2" className={s.link}>
+                ページ2
+              </Link>
+              <Link href="/page3" className={s.link}>
+                ページ3
+              </Link>
+              <Link href="/account" className={s.link}>
+                Account
+              </Link>
+            </>
           )}
         </nav>
       </div>
