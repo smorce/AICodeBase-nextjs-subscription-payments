@@ -1,4 +1,26 @@
-## プロジェクトの概要：AICodeBase-nextjs-subscription-payments
+<p align="center">
+<img src="https://huggingface.co/datasets/smorce/IconAssets/resolve/2d4924e59be287682696c4407f0a26e73218b4da/AICodeBase_Header_image.png" width="100%">
+<h1 align="center">AICodeBase-nextjs-subscription-payments</h1>
+<p align="center">
+  <a href="https://note.com/smorce/"><b>[🌐 Website]</b></a> •
+  <a href="https://github.com/smorce"><b>[🐱 GitHub]</b></a>
+  <a href="https://x.com/smorce1"><b>[🐦 Twitter]</b></a> •
+  <a href="https://note.com/smorce/"><b>[🍀 Official Blog]</b></a>
+</p>
+
+---
+
+## to do
+
+
+## done
+- 未ログイン中のユーザーに表示するテンプレートページ「ページ1」の追加
+- ログイン中のユーザーに表示するテンプレートページ「ページ2」の追加
+- ログイン中のユーザーに表示するテンプレートページ「ページ3」の追加
+
+
+
+## プロジェクトの概要
 
 このプロジェクトは、Next.js、Supabase、Stripeを活用したサブスクリプション決済システムの構築例です。ユーザー認証、サブスクリプションプランの選択、決済処理、顧客ポータルなどを備えています。
 
