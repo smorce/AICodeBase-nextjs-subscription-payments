@@ -1,19 +1,25 @@
-"use client";
+'use client';
 
-import { ChainlitContext } from "@chainlit/react-client";
+import React from "react";
+import { Playground } from "./playground";
 import { RecoilRoot } from "recoil";
+import { ChainlitAPI, ChainlitContext } from "@chainlit/react-client";
+import "./index.css";
 
-interface Page3ClientProps {
-  apiClient: any;
-  children: React.ReactNode;
-}
+// 「/chainlit」がなくても動いた。サンプルコードは「mount_chainlit(app=app, target="cl_app.py", path="/chainlit")」としているので「/chainlit」がついている。
+// LLM は FastAPI 形式にしないと動かない
+const CHAINLIT_SERVER = "https://d206-34-173-37-132.ngrok-free.app/chainlit";
 
-export default function Page3Client({ apiClient, children }: Page3ClientProps) {
+const apiClient = new ChainlitAPI(CHAINLIT_SERVER, "webapp");
+
+export default function Page3Client() {
   return (
-    <ChainlitContext.Provider value={apiClient}>
-      <RecoilRoot>
-        {children}
-      </RecoilRoot>
-    </ChainlitContext.Provider>
+    <React.StrictMode>
+      <ChainlitContext.Provider value={apiClient}>
+        <RecoilRoot>
+          <Playground />
+        </RecoilRoot>
+      </ChainlitContext.Provider>
+    </React.StrictMode>
   );
 }

@@ -1,17 +1,16 @@
-"use client";
+'use client';
 
-// 名前を ChainlitInput, ChainlitButton に修正
+// ChainlitInput, ChainlitButton に名前を修正
 import { ChainlitInput } from "@/components/ui/Input";
 import { ChainlitButton } from "@/components/ui/Button";
 import {
   useChatInteract,
   useChatMessages,
-  IStep,
+  type IStep,
 } from "@chainlit/react-client";
 import { useState } from "react";
 
-
-export function Playground() {
+export function Playground() { // 名前付きエクスポート
   const [inputValue, setInputValue] = useState("");
   const { sendMessage } = useChatInteract();
   const { messages } = useChatMessages();
@@ -19,10 +18,12 @@ export function Playground() {
   const handleSendMessage = () => {
     const content = inputValue.trim();
     if (content) {
-      const message = {
+      const message: IStep = {
+        id: Date.now().toString(),
         name: "user",
-        type: "user_message" as const,
+        type: "user_message",
         output: content,
+        createdAt: new Date().toISOString(),
       };
       sendMessage(message, []);
       setInputValue("");
@@ -53,7 +54,7 @@ export function Playground() {
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex flex-col">
       <div className="flex-1 overflow-auto p-6">
         <div className="space-y-4">
-          {messages.map((message) => renderMessage(message))}
+          {messages.map((message: IStep) => renderMessage(message))}
         </div>
       </div>
       <div className="border-t p-4 bg-white dark:bg-gray-800">
