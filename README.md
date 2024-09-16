@@ -11,7 +11,12 @@
 ---
 
 ## to do
-- docs/project_summary.md に「ページ1、ページ2、ページ3」の説明を追加
+- docs/project_summary.md に以下を追記
+  -「ページ1、ページ2、ページ3、chainlit」の説明
+  - ChainlitButton と ChainlitInput の追加
+  - global.d.ts の追加
+  - middleware.ts の追加
+
 
 ## doing
 - development1 を作成した。理由は Chainlit を組み込むため

@@ -33,13 +33,25 @@ AICodeBase-nextjs-subscription-payments/
 │   │   │   └── route.ts
 │   │   └── reset_password
 │   │       └── route.ts
+│   ├── chainlit
+│   │   └── page.tsx
+│   ├── chainlit_app.py
 │   ├── layout.tsx
 │   ├── opengraph-image.png
+│   ├── page1
+│   │   └── page.tsx
+│   ├── page2
+│   │   └── page.tsx
+│   ├── page3
+│   │   ├── index.css
+│   │   ├── Page3Client.tsx
+│   │   ├── page.tsx
+│   │   └── playground.tsx
 │   ├── page.tsx
-│   └── signin
-│       ├── [id]
-│       │   └── page.tsx
-│       └── page.tsx
+│   ├── signin
+│   │   ├── [id]
+│   │   │   └── page.tsx
+│   │   └── page.tsx
 ├── components
 │   ├── icons
 │   │   ├── GitHub.tsx
@@ -60,6 +72,7 @@ AICodeBase-nextjs-subscription-payments/
 │       ├── Button
 │       │   ├── Button.module.css
 │       │   ├── Button.tsx
+│       │   ├── ChainlitButton.tsx
 │       │   └── index.ts
 │       ├── Card
 │       │   ├── Card.tsx
@@ -68,6 +81,7 @@ AICodeBase-nextjs-subscription-payments/
 │       │   ├── Footer.tsx
 │       │   └── index.ts
 │       ├── Input
+│       │   ├── ChainlitInput.tsx
 │       │   ├── index.ts
 │       │   ├── Input.module.css
 │       │   └── Input.tsx
@@ -91,10 +105,12 @@ AICodeBase-nextjs-subscription-payments/
 │           └── use-toast.ts
 ├── components.json
 ├── docs
+│   ├── [Colab]プロジェクトサマリーの作成コード.ipynb
 │   ├── memo.md
 │   └── project_summary.md
 ├── fixtures
 │   └── stripe-fixtures.json
+├── global.d.ts
 ├── LICENSE
 ├── middleware.ts
 ├── next-env.d.ts
