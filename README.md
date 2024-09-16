@@ -27,12 +27,16 @@ https://colab.research.google.com/drive/1uGcgP0_RxOE9Vxjcc-1MprwcLeGP9Gm6?usp=sh
 
 そのあと、ミドルウェアの URL を上書きする。
 NextResponse.redirect('https://d206-34-173-37-132.ngrok-free.app/');
+→これをローカルに変更する。そのために、フロントエンドとバックエンドを分離させる。
 
 
 ★Chainlit を Webアプリケーションに組み込むところはできたので、Chainlit の認証をシームレスにできるように対応中。
 - Webアプリケーションでログインした後にヘッダーから Chainlit に飛ぶと、また Chainlit の方でログインしないといけない。ここをうまいことアクセストークンを渡すなりして、シームレスにログインできるようにしたい。
-→やった。ヘッダー認証に変更したので、SUPABASE_JWT_SECRET を SupabaseプロジェクトのJWTシークレットキーとして取得する。
-あと、バックエンドとフロントエンドをわけたあと、
+→やった。
+
+◯やること
+・ヘッダー認証に変更したので、SUPABASE_JWT_SECRET を SupabaseプロジェクトのJWTシークレットキーとして取得する。
+・あと、バックエンドとフロントエンドをわけたあと、
 pip install PyJWT
 して、ローカルで Chainlit.py 起動できるようにする。
 

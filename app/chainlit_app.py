@@ -30,13 +30,16 @@ import chainlit as cl
 from supabase import create_client, Client
 import jwt
 
+# .envファイルから環境変数を読み込む
 load_dotenv()
 
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
 os.chdir(os.path.dirname(__file__))
 
+
 # 環境変数からSupabaseのJWTシークレットを取得
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+
 
 # ===================================================================
 

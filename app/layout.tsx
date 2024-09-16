@@ -19,6 +19,17 @@ export const metadata: Metadata = {
   }
 };
 
+
+// 認証状態の確認:
+// ユーザーの認証状態を確認し、ログイン/ログアウト状態に応じて適切なナビゲーション項目を表示するために、非同期処理をしている。
+
+// 以下のエラーは一旦気にしない。
+// Navbar' を JSX コンポーネントとして使用することはできません。
+// 上記を修正するとしたら、
+// Navbar コンポーネントを同期的なコンポーネントに変更し、データフェッチングを別のコンポーネント(NavlinksWrapper を作成する)に移動します。
+// layout.tsx ファイルで Suspense を使用して、非同期コンポーネントをラップします。
+// という方法になり、Navbar を使用している他のページでも、必要に応じて Suspense でラップすることになる。
+
 export default async function RootLayout({ children }: PropsWithChildren) {
   return (
     <html lang="en">
