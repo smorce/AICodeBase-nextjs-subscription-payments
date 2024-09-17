@@ -16,19 +16,13 @@
 
 
 - Page2 + FastAPI
-  - トークンの有効期限 (expires_delta) を適切に設定し、必要に応じてリフレッシュトークンの実装を検討してください。
+  - トークンの有効期限 (expires_delta) を適切に設定し、必要に応じてリフレッシュトークンの実装を検討する
     - リフレッシュトークンまでは実装していないので 優先度の低い to do としてメモしておく
 
 
 ## doing
-- development1 を作成した。理由は Chainlit を組み込むため
-  - Page3 を Chainlit のチャットUI に置き換えてみる
-  - development1 に以下をインストールした
-    - npm install @chainlit/react-client
-  - UI として以下を追加
-    - ui/Button/chainlit_button.tsx
-    - ui/Input/chainlit_input.tsx
 
+- chainlit の使い方(現状は Colab をバックエンドにしている)
 先に chainlit を Colab で動かすこと。
 https://colab.research.google.com/drive/1uGcgP0_RxOE9Vxjcc-1MprwcLeGP9Gm6?usp=sharing
 
@@ -64,6 +58,14 @@ to do
     - SQLite用の login ページも追加。こっちは Supabase とは関係がない 
   - よって、Supabase の未ログインユーザーも表示される仕様に変更した。ログイン関連は SQLite と関連がある
 - ログイン中のユーザーに表示するテンプレートページ「ページ3」の追加
+- development1 を作成した。理由は Chainlit を組み込むため
+  - Page3 を Chainlit のチャットUI に置き換えてみる
+  - development1 に以下をインストールした
+    - npm install @chainlit/react-client
+  - UI として以下を追加
+    - ui/Button/chainlit_button.tsx
+    - ui/Input/chainlit_input.tsx
+
 
 ## backend
 app/: アプリケーションのメインコードを含みます。

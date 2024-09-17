@@ -1,17 +1,29 @@
 services:
   backend:
     build: ./backend
-    container_name: backend
+    image: AICodeBase-backend-image:latest
+    container_name: AICodeBase-backend-container
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
     env_file:
       - ./backend/.env
+    restart: always
+    tty: true
+    shm_size: '22.4gb'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   frontend:
     build: ./frontend
-    container_name: frontend
+    image: AICodeBase-frontend-image:latest
+    container_name: AICodeBase-frontend-container
     ports:
       - "3000:3000"
     volumes:
@@ -20,14 +32,20 @@ services:
       - ./frontend/.env
     depends_on:
       - backend
+    restart: always
+    tty: true
+    shm_size: '6.4gb'
 
   stripe-listener:
     image: stripe/stripe-cli
-    container_name: stripe-listener
+    container_name: AICodeBase-stripe-listener-container
     command: ["listen", "--forward-to", "http://frontend:3000/api/webhooks"]
     env_file:
       - ./frontend/.env
     depends_on:
       - frontend
     volumes:
-      - ~/.config/stripe:/root/.config/stripe:ro   # ボリュームのマウント: ホストの ~/.config/stripe をコンテナにマウントし、認証情報を共有します。
+      - ~/.config/stripe:/root/.config/stripe:ro
+    restart: always
+    tty: true
+    shm_size: '3.2gb'
