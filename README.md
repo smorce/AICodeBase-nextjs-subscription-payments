@@ -46,9 +46,10 @@ pip install PyJWT
 Dockerコマンドは入っていたので、ビルドはできそう。
 Page2 のサンプル実装はできたので、あとは動かしてみるだけ。ユーザー登録とアイテム登録ができ、フロントエンドはNext.js、バックエンドはFastAPI、DBはSQLite。
 
+to do
 - Page2(FastAPI)のテスト
   - これがうまくいけば、今後はこれを参考に FastAPI が実装できる
-- ローカルで Chainlit.py の実装。Colaｂ ではうまくいったので、ローカルで起動した Chainlit にアクセスできればOK。
+- ローカルで Chainlit.py の実装。Colaｂ ではうまくいったので、ローカルで起動した Chainlit にアクセスできればOK。ngrok の URL をローカルアドレスに変更する。
   - chainlit run app.py -w --host "0.0.0.0" --port 8491
     - この-wフラグは Chainlit に自動リロードを有効にするように指示するため、アプリケーションに変更を加えるたびにサーバーを再起動する必要はありません。これで、チャットボットの UI に http://localhost:8491 からアクセスできるはずです。
     
