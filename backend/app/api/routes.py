@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from ..dependencies import get_db, get_current_user
+from .dependencies import get_db, get_current_user
 from ..schemas.schemas import Item, ItemCreate, UserCreate, Token
 from ..models.models import Item as ItemModel, User
 from sqlalchemy.orm import Session

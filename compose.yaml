@@ -1,10 +1,12 @@
 services:
   backend:
-    build: ./backend
-    image: AICodeBase-backend-image:latest
-    container_name: AICodeBase-backend-container
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: aicodebasse-backend-image:latest
+    container_name: aicodebasse-backend-container
     ports:
-      - "8000:8000"
+      - "6302:6302"
     volumes:
       - ./backend:/app
     env_file:
@@ -21,15 +23,18 @@ services:
               capabilities: [gpu]
 
   frontend:
-    build: ./frontend
-    image: AICodeBase-frontend-image:latest
-    container_name: AICodeBase-frontend-container
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: aicodebasse-frontend-image:latest
+    container_name: aicodebasse-frontend-container
     ports:
       - "3000:3000"
     volumes:
       - ./frontend:/app
     env_file:
       - ./frontend/.env
+      - ./frontend/.env.local    # .env と同じ名前の環境変数がある場合は .env.local の値で上書きされます。
     depends_on:
       - backend
     restart: always
@@ -38,7 +43,7 @@ services:
 
   stripe-listener:
     image: stripe/stripe-cli
-    container_name: AICodeBase-stripe-listener-container
+    container_name: aicodebasse-stripe-listener-container
     command: ["listen", "--forward-to", "http://frontend:3000/api/webhooks"]
     env_file:
       - ./frontend/.env
