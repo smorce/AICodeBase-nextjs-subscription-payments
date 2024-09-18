@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# GitHub認証をシークレットから読み込む
+# GitHub認証をシークレットから読み込む（読み込む必要はないかもしれない）
 if [ -f /run/secrets/github_token ]; then
   gh auth login --with-token < /run/secrets/github_token
 else
