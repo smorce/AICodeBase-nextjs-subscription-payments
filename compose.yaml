@@ -40,6 +40,8 @@ services:
     restart: always
     tty: true
     shm_size: '6.4gb'
+    secrets:
+      - github_token
 
   stripe-listener:
     image: stripe/stripe-cli
@@ -50,7 +52,11 @@ services:
     depends_on:
       - frontend
     volumes:
-      - ~/.config/stripe:/root/.config/stripe:ro
+      - ~/.config/stripe:/root/.config/stripe
     restart: always
     tty: true
     shm_size: '3.2gb'
+
+secrets:
+  github_token:
+    file: ./github_token.txt

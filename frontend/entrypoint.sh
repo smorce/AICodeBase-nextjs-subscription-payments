@@ -1,9 +1,11 @@
 #!/bin/sh
 set -e
 
-# GitHub認証
-if [ -n "$GH_TOKEN" ]; then
-  echo "$GH_TOKEN" | gh auth login --with-token
+# GitHub認証をシークレットから読み込む
+if [ -f /run/secrets/github_token ]; then
+  gh auth login --with-token < /run/secrets/github_token
+else
+  echo "GitHubトークンがシークレットとして提供されていません。認証をスキップします。"
 fi
 
 # Supabase認証とプロジェクトリンク

@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from .dependencies import get_db, get_current_user
-from ..schemas.schemas import Item, ItemCreate, UserCreate, Token
-from ..models.models import Item as ItemModel, User
+from ..schemas.schemas import Item, ItemCreate, UserCreate, User, Token
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from ..core.config import settings
 from datetime import datetime, timedelta
 from fastapi.security import OAuth2PasswordRequestForm
+from typing import Optional
 
 router = APIRouter()
 
@@ -66,7 +66,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 
 @router.post("/items/", response_model=Item)
 def create_item(item: ItemCreate, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    db_item = ItemModel(**item.dict())
+    db_item = Item(**item.dict())
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
@@ -74,14 +74,14 @@ def create_item(item: ItemCreate, db: Session = Depends(get_db), user: dict = De
 
 @router.get("/items/{item_id}", response_model=Item)
 def read_item(item_id: int, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    item = db.query(ItemModel).filter(ItemModel.id == item_id).first()
+    item = db.query(Item).filter(Item.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
 
 @router.put("/items/{item_id}", response_model=Item)
 def update_item(item_id: int, item: ItemCreate, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    db_item = db.query(ItemModel).filter(ItemModel.id == item_id).first()
+    db_item = db.query(Item).filter(Item.id == item_id).first()
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
     for key, value in item.dict().items():
@@ -92,7 +92,7 @@ def update_item(item_id: int, item: ItemCreate, db: Session = Depends(get_db), u
 
 @router.delete("/items/{item_id}", response_model=dict)
 def delete_item(item_id: int, db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
-    db_item = db.query(ItemModel).filter(ItemModel.id == item_id).first()
+    db_item = db.query(Item).filter(Item.id == item_id).first()
     if not db_item:
         raise HTTPException(status_code=404, detail="Item not found")
     db.delete(db_item)
