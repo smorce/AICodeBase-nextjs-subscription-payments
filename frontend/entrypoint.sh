@@ -12,7 +12,6 @@ fi
 if [ -n "$SUPABASE_ACCESS_TOKEN" ] && [ -n "$SUPABASE_REFERENCE_ID" ] && [ -n "$SUPABASE_DB_PASSWORD" ]; then
   supabase login "$SUPABASE_ACCESS_TOKEN"
   supabase link --project-ref "$SUPABASE_REFERENCE_ID" -p "$SUPABASE_DB_PASSWORD"
-  supabase db pull
 elif [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
   supabase login "$SUPABASE_ACCESS_TOKEN"
   echo "Supabase project reference or database password not set. Skipping project link."
