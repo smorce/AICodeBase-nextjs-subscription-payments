@@ -8,6 +8,7 @@ from pydantic import BaseModel
 import os
 
 # ★適切ではないが、このファイルで完結できるようにするために、ファイル分割はしていない
+# ★Docker を使った Next.js と FastAPI のシンプルな連携を確認する目的なのでユーザー認証は入れていない
 app = FastAPI()
 
 # CORSの設定
