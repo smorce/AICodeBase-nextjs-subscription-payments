@@ -2,11 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker, Session
 import os
 
 app = FastAPI()
-
 
 # CORSの設定
 origins = [
@@ -32,6 +31,7 @@ DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 print(f"DATABASE_PATH = {DATABASE_PATH}")
 print(f"DATABASE_URL = {DATABASE_URL}")
 
+
 # DATABASE_URL = sqlite:///./test.db　　　←　環境変数
 # aicodebasse-backend-container          | DATABASE_PATH = /app/test.db
 # aicodebasse-backend-container          | DATABASE_URL = sqlite:////app/test.db
@@ -48,9 +48,23 @@ if os.path.exists(DATABASE_PATH):
 
 
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(bind=engine)
+# グローバル変数としてエンジン、セッション、ベースクラスを設定
+engine = None
+SessionLocal = None
 Base = declarative_base()
+
+def init_db():
+    global engine, SessionLocal, Base
+    try:
+        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+        SessionLocal = sessionmaker(bind=engine)
+        Base.metadata.bind = engine
+        print("データベースエンジンを初期化しました")
+    except SQLAlchemyError as e:
+        print(f"データベースの初期化に失敗しました: {str(e)}")
+
+# 初期化を実行
+init_db()
 
 # シンプルなテーブルの定義
 class Item(Base):
@@ -67,30 +81,40 @@ def create_db():
     try:
         Base.metadata.create_all(bind=engine)
         # 初期データの追加
-        session = SessionLocal()
-        new_item = Item(name="初期アイテム")
-        session.add(new_item)
-        session.commit()
-        session.close()
+        with SessionLocal() as session:
+            new_item = Item(name="初期アイテム")
+            session.add(new_item)
+            session.commit()
         return {"message": "DBおよびテーブルを作成しました"}
     except SQLAlchemyError as e:
         return {"message": f"DB作成に失敗しました: {str(e)}"}
-
 
 # ファイル内のテーブル構造とデータは削除されますが、空のデータベースファイルとして存在し続けます。
 # そのため、osを使用してファイルを直接削除する
 @app.post("/delete_db")
 def delete_db():
+    global engine, SessionLocal, Base
     try:
+        # テーブルを削除
         Base.metadata.drop_all(bind=engine)
         print("デバッグ1: テーブルを削除しました")
+
+        # エンジンをディスポーズして全接続を閉じる
+        engine.dispose()
+        print("デバッグ2: エンジンをディスポーズしました")
+
+        # データベースファイルを削除
         if os.path.exists(DATABASE_PATH):
-            print(f"デバッグ2: {DATABASE_PATH} が存在します")
             os.remove(DATABASE_PATH)
-            return {"message": "DBおよびテーブルを削除しました"}
+            print(f"デバッグ3: {DATABASE_PATH} を削除しました")
         else:
-            print(f"デバッグ3: {DATABASE_PATH} が存在しません")
-            return {"message": "DBファイルが存在しません"}
+            print(f"デバッグ4: {DATABASE_PATH} が存在しません")
+
+        # エンジン、セッションを再初期化
+        init_db()
+        print("デバッグ5: エンジンを再初期化しました")
+
+        return {"message": "DBおよびテーブルを削除しました"}
     except SQLAlchemyError as e:
         return {"message": f"DB削除に失敗しました: {str(e)}"}
     except OSError as e:
@@ -107,9 +131,8 @@ def delete_table():
 @app.get("/read_table")
 def read_table():
     try:
-        session = SessionLocal()
-        items = session.query(Item).all()
-        session.close()
-        return {"items": [{"id": item.id, "name": item.name} for item in items]}
+        with SessionLocal() as session:
+            items = session.query(Item).all()
+            return {"items": [{"id": item.id, "name": item.name} for item in items]}
     except SQLAlchemyError as e:
         return {"message": f"テーブルの読み取りに失敗しました: {str(e)}"}

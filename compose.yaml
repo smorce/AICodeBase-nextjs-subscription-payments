@@ -3,6 +3,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        UID: ${UID}
+        GID: ${GID}
     image: aicodebasse-backend-image:latest
     container_name: aicodebasse-backend-container
     ports:
@@ -14,6 +17,10 @@ services:
     restart: always
     tty: true
     shm_size: '22.4gb'
+    # user: "${UID}:${GID}"
+    # environment:
+    #   - UID=${UID}
+    #   - GID=${GID}
     deploy:
       resources:
         reservations:
