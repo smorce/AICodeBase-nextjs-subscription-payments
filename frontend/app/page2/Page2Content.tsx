@@ -45,6 +45,8 @@ export default function Page2Content() {
             });
             const data = await res.json();
             setMessage(data.message);
+            setTableData([]); // テーブル削除後にアイテムデータをクリア
+            setUsers([]);     // テーブル削除後にユーザーデータをクリア
         } catch (error) {
             setMessage('テーブル削除に失敗しました');
             console.error(error);
