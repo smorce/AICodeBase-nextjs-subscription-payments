@@ -25,28 +25,8 @@ app.add_middleware(
 # データベースの設定（SQLiteを使用）。バックエンドフォルダに作成される
 # ホストマシンのパスとコンテナ内のパスは異なる。/app/app/test.db がコンテナ内のパス
 CURRENT_DIR = os.getcwd()
-DATABASE_PATH = os.path.join(CURRENT_DIR, "test.db")
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
-
-print(f"DATABASE_PATH = {DATABASE_PATH}")
-print(f"DATABASE_URL = {DATABASE_URL}")
-
-
-# DATABASE_URL = sqlite:///./test.db　　　←　環境変数
-# aicodebasse-backend-container          | DATABASE_PATH = /app/test.db
-# aicodebasse-backend-container          | DATABASE_URL = sqlite:////app/test.db
-
-
-import os
-
-print(f"Current working directory: {os.getcwd()}")
-print(f"Database file path: {DATABASE_PATH}")
-print(f"File exists: {os.path.exists(DATABASE_PATH)}")
-if os.path.exists(DATABASE_PATH):
-    print(f"File permissions: {oct(os.stat(DATABASE_PATH).st_mode)[-3:]}")
-    print(f"File owner: {os.stat(DATABASE_PATH).st_uid}")
-
-
+DATABASE_PATH = os.path.join(CURRENT_DIR, "test.db")  # /app/test.db
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"           # sqlite:////app/test.db
 
 # グローバル変数としてエンジン、セッション、ベースクラスを設定
 engine = None

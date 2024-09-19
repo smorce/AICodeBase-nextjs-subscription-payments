@@ -17,10 +17,6 @@ services:
     restart: always
     tty: true
     shm_size: '22.4gb'
-    # user: "${UID}:${GID}"
-    # environment:
-    #   - UID=${UID}
-    #   - GID=${GID}
     deploy:
       resources:
         reservations:
