@@ -36,7 +36,7 @@ Base = declarative_base()
 # パスワードハッシュ用のコンテキスト設定
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Pydanticモデル定義
+# スキーマ定義
 class UserCreate(BaseModel):
     name: str
     password: str

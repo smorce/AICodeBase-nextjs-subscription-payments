@@ -30,6 +30,8 @@ export default function Page2Content() {
             });
             const data = await res.json();
             setMessage(data.message);
+            setTableData([]); // DB削除後にアイテムデータをクリア
+            setUsers([]);     // DB削除後にユーザーデータをクリア
         } catch (error) {
             setMessage('DB削除に失敗しました');
             console.error(error);
