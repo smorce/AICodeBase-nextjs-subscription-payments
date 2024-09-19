@@ -7,6 +7,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 import os
 
+# ★適切ではないが、このファイルで完結できるようにするために、ファイル分割はしていない
 app = FastAPI()
 
 # CORSの設定
