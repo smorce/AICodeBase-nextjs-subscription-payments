@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from .dependencies import get_db, get_current_user
-from ..schemas.schemas import Item, ItemCreate, UserCreate, User, Token
+from ..schemas.schemas import Item, ItemCreate, UserCreate, Token  # Pydanticスキーマのインポート
+from ..models.models import User as UserModel, Item as ItemModel  # SQLAlchemyモデルのインポート
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import JWTError, jwt
@@ -17,10 +18,13 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    try:
+        return pwd_context.hash(password)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"パスワードハッシュ化エラー: {str(e)}")
 
 def authenticate_user(db: Session, username: str, password: str):
-    user = db.query(User).filter(User.username == username).first()
+    user = db.query(UserModel).filter(UserModel.username == username).first()
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -39,15 +43,15 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 @router.post("/register", response_model=User)
 def register(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user.username).first()
+    db_user = db.query(UserModel).filter(UserModel.username == user.username).first()
     if db_user:
         raise HTTPException(status_code=400, detail="ユーザー名が既に存在します。")
     hashed_password = get_password_hash(user.password)
-    new_user = User(username=user.username, hashed_password=hashed_password)
+    new_user = UserModel(username=user.username, hashed_password=hashed_password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return new_user
+    return User(id=new_user.id, username=new_user.username)  # response_model=Userとしているため、PydanticモデルのUserインスタンスを返す
 
 @router.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -99,11 +103,29 @@ def delete_item(item_id: int, db: Session = Depends(get_db), user: dict = Depend
     db.commit()
     return {"detail": f"Item with id {item_id} has been deleted."}
 
+
+
+
+
+from fastapi.security import OAuth2PasswordBearer
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
+# oauth2_scheme = OAuth2PasswordRequestForm(tokenUrl="token", auto_error=False)
+
+def conditional_oauth2(token: str = Security(oauth2_scheme)):
+    # if settings.REQUIRE_AUTH:
+    #     return token
+    return None
+
 @router.post("/create-db", response_model=dict)
-def create_db(db: Session = Depends(get_db), user: dict = Depends(get_current_user)):
+def create_db(db: Session = Depends(get_db), token: str = Depends(conditional_oauth2)):
     from ..models.models import Base
     Base.metadata.create_all(bind=db.get_bind())
     return {"message": "データベースが作成されました。"}
+
+
+
+
+
 
 @router.delete("/delete-db", response_model=dict)
 def delete_db(db: Session = Depends(get_db), user: dict = Depends(get_current_user)):

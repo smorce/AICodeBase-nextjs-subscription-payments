@@ -11,6 +11,9 @@ RUN curl -L -o supabase.apk https://github.com/supabase/cli/releases/download/v1
     apk add --allow-untrusted supabase.apk && \
     rm supabase.apk
 
+# Supabase CLIのパスを通す（不要）
+# ENV PATH="/root/.supabase/bin:$PATH"
+
 # Vercel CLIのインストール
 RUN npm i -g vercel
 
