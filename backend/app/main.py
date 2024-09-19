@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from passlib.context import CryptContext
+from pydantic import BaseModel
 import os
 
 app = FastAPI()
@@ -23,7 +25,6 @@ app.add_middleware(
 )
 
 # データベースの設定（SQLiteを使用）。バックエンドフォルダに作成される
-# ホストマシンのパスとコンテナ内のパスは異なる。/app/app/test.db がコンテナ内のパス
 CURRENT_DIR = os.getcwd()
 DATABASE_PATH = os.path.join(CURRENT_DIR, "test.db")  # /app/test.db
 DATABASE_URL = f"sqlite:///{DATABASE_PATH}"           # sqlite:////app/test.db
@@ -32,11 +33,29 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+# パスワードハッシュ用のコンテキスト設定
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Pydanticモデル定義
+class UserCreate(BaseModel):
+    name: str
+    password: str
+
+class UserUpdate(BaseModel):
+    name: str = None
+    password: str = None
+
 # モデル定義
 class Item(Base):
     __tablename__ = "items"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
 
 # 依存性注入用のDBセッション取得関数
 def get_db():
@@ -45,6 +64,14 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# パスワードをハッシュ化する関数
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+# パスワードの検証関数
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 # ルートエンドポイント
 @app.get("/")
@@ -67,8 +94,7 @@ def create_db(db: Session = Depends(get_db)):
             detail=f"DB作成に失敗しました: {str(e)}"
         )
 
-# ファイル内のテーブル構造とデータは削除されますが、空のデータベースファイルとして存在し続けます。
-# そのため、osを使用してファイルを直接削除する
+# DBおよびテーブル削除エンドポイント
 @app.post("/delete_db")
 def delete_db():
     try:
@@ -104,10 +130,11 @@ def delete_db():
 def delete_table(db: Session = Depends(get_db)):
     try:
         Item.__table__.drop(bind=engine)
+        User.__table__.drop(bind=engine)
         return {"message": "テーブルを削除しました"}
     except SQLAlchemyError as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,   # コンソールには 500 Internal Server Error が表示される
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,   
             detail=f"テーブル削除に失敗しました: {str(e)}"
         )
 
@@ -116,9 +143,74 @@ def delete_table(db: Session = Depends(get_db)):
 def read_table(db: Session = Depends(get_db)):
     try:
         items = db.query(Item).all()
-        return {"items": [{"id": item.id, "name": item.name} for item in items]}
+        users = db.query(User).all()
+        return {
+            "items": [{"id": item.id, "name": item.name} for item in items],
+            "users": [{"id": user.id, "name": user.name} for user in users]
+        }
     except SQLAlchemyError as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,   # コンソールには 500 Internal Server Error が表示される
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,   
             detail=f"テーブルの読み取りに失敗しました: {str(e)}"
+        )
+
+# ユーザー作成エンドポイント
+@app.post("/users/create")
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    try:
+        hashed_password = get_password_hash(user.password)
+        new_user = User(name=user.name, password_hash=hashed_password)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return {"message": "ユーザーを作成しました", "user": {"id": new_user.id, "name": new_user.name}}
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"ユーザー作成に失敗しました: {str(e)}"
+        )
+
+# ユーザー更新エンドポイント
+@app.put("/users/{user_id}")
+def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="ユーザーが見つかりません"
+            )
+        if user_update.name is not None:
+            user.name = user_update.name
+        if user_update.password is not None:
+            user.password_hash = get_password_hash(user_update.password)
+        db.commit()
+        db.refresh(user)
+        return {"message": "ユーザーを更新しました", "user": {"id": user.id, "name": user.name}}
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"ユーザー更新に失敗しました: {str(e)}"
+        )
+
+# ユーザー削除エンドポイント
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="ユーザーが見つかりません"
+            )
+        db.delete(user)
+        db.commit()
+        return {"message": "ユーザーを削除しました"}
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"ユーザー削除に失敗しました: {str(e)}"
         )
