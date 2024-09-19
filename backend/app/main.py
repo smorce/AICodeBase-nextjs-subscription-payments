@@ -45,6 +45,34 @@ class UserUpdate(BaseModel):
     name: str = None
     password: str = None
 
+class CreateDBResponse(BaseModel):
+    message: str
+
+class DeleteDBResponse(BaseModel):
+    message: str
+
+class DeleteTableResponse(BaseModel):
+    message: str
+
+class ReadTableResponse(BaseModel):
+    items: list
+    users: list
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+
+class CreateUserResponse(BaseModel):
+    message: str
+    user: UserResponse
+
+class UpdateUserResponse(BaseModel):
+    message: str
+    user: UserResponse
+
+class DeleteUserResponse(BaseModel):
+    message: str
+
 # モデル定義
 class Item(Base):
     __tablename__ = "items"
@@ -79,7 +107,7 @@ def read_root():
     return {"message": "Hello World"}
 
 # DBおよびテーブル作成エンドポイント
-@app.post("/create_db")
+@app.post("/create_db", response_model=CreateDBResponse)
 def create_db(db: Session = Depends(get_db)):
     try:
         Base.metadata.create_all(bind=engine)
@@ -87,7 +115,7 @@ def create_db(db: Session = Depends(get_db)):
         new_item = Item(name="初期アイテム")
         db.add(new_item)
         db.commit()
-        return {"message": "DBおよびテーブルを作成しました"}
+        return CreateDBResponse(message="DBおよびテーブルを作成しました")
     except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -95,7 +123,7 @@ def create_db(db: Session = Depends(get_db)):
         )
 
 # DBおよびテーブル削除エンドポイント
-@app.post("/delete_db")
+@app.post("/delete_db", response_model=DeleteDBResponse)
 def delete_db():
     try:
         # テーブルを削除
@@ -113,7 +141,7 @@ def delete_db():
                 detail=f"{DATABASE_PATH} が存在しません"
             )
 
-        return {"message": "DBおよびテーブルを削除しました"}
+        return DeleteDBResponse(message="DBおよびテーブルを削除しました")
     except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -126,12 +154,12 @@ def delete_db():
         )
 
 # テーブル削除エンドポイント
-@app.post("/delete_table")
+@app.post("/delete_table", response_model=DeleteTableResponse)
 def delete_table(db: Session = Depends(get_db)):
     try:
         Item.__table__.drop(bind=engine)
         User.__table__.drop(bind=engine)
-        return {"message": "テーブルを削除しました"}
+        return DeleteTableResponse(message="テーブルを削除しました")
     except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,   
@@ -139,15 +167,15 @@ def delete_table(db: Session = Depends(get_db)):
         )
 
 # テーブル読み取りエンドポイント
-@app.get("/read_table")
+@app.get("/read_table", response_model=ReadTableResponse)
 def read_table(db: Session = Depends(get_db)):
     try:
         items = db.query(Item).all()
         users = db.query(User).all()
-        return {
-            "items": [{"id": item.id, "name": item.name} for item in items],
-            "users": [{"id": user.id, "name": user.name} for user in users]
-        }
+        return ReadTableResponse(
+            items=[{"id": item.id, "name": item.name} for item in items],
+            users=[{"id": user.id, "name": user.name} for user in users]
+        )
     except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,   
@@ -155,7 +183,7 @@ def read_table(db: Session = Depends(get_db)):
         )
 
 # ユーザー作成エンドポイント
-@app.post("/users/create")
+@app.post("/users/create", response_model=CreateUserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     try:
         hashed_password = get_password_hash(user.password)
@@ -163,7 +191,10 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        return {"message": "ユーザーを作成しました", "user": {"id": new_user.id, "name": new_user.name}}
+        return CreateUserResponse(
+            message="ユーザーを作成しました",
+            user=UserResponse(id=new_user.id, name=new_user.name)
+        )
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
@@ -172,7 +203,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         )
 
 # ユーザー更新エンドポイント
-@app.put("/users/{user_id}")
+@app.put("/users/{user_id}", response_model=UpdateUserResponse)
 def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get_db)):
     try:
         user = db.query(User).filter(User.id == user_id).first()
@@ -187,7 +218,10 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
             user.password_hash = get_password_hash(user_update.password)
         db.commit()
         db.refresh(user)
-        return {"message": "ユーザーを更新しました", "user": {"id": user.id, "name": user.name}}
+        return UpdateUserResponse(
+            message="ユーザーを更新しました",
+            user=UserResponse(id=user.id, name=user.name)
+        )
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
@@ -196,7 +230,7 @@ def update_user(user_id: int, user_update: UserUpdate, db: Session = Depends(get
         )
 
 # ユーザー削除エンドポイント
-@app.delete("/users/{user_id}")
+@app.delete("/users/{user_id}", response_model=DeleteUserResponse)
 def delete_user(user_id: int, db: Session = Depends(get_db)):
     try:
         user = db.query(User).filter(User.id == user_id).first()
@@ -207,7 +241,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
             )
         db.delete(user)
         db.commit()
-        return {"message": "ユーザーを削除しました"}
+        return DeleteUserResponse(message="ユーザーを削除しました")
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(
