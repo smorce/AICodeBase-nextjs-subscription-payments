@@ -6,10 +6,33 @@ from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from passlib.context import CryptContext
 from pydantic import BaseModel
 import os
+from dotenv import load_dotenv
+
 
 # ★適切ではないが、このファイルで完結できるようにするために、ファイル分割はしていない
 # ★Docker を使った Next.js と FastAPI のシンプルな連携を確認する目的なのでユーザー認証は入れていない
-app = FastAPI()
+
+
+# データベースの設定（SQLiteを使用）。バックエンドフォルダに作成される
+CURRENT_DIR = os.getcwd()
+DATABASE_PATH = os.path.join(CURRENT_DIR, "test.db")  # /app/test.db
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"           # sqlite:////app/test.db
+
+# .envファイルへのパスを構築
+env_path = os.path.join(CURRENT_DIR, '..', '.env')
+
+# .envファイルが存在するか確認
+if os.path.exists(env_path):
+    # .envファイルを読み込む
+    load_dotenv(dotenv_path=env_path)
+else:
+    print(f"Warning: .env file not found at {env_path}")
+
+# 環境変数から値を取得
+PROJECT_NAME = os.getenv("PROJECT_NAME", "FastAPI")
+
+# FastAPIアプリケーションを作成
+app = FastAPI(title=PROJECT_NAME)
 
 # CORSの設定
 origins = [
@@ -25,11 +48,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# データベースの設定（SQLiteを使用）。バックエンドフォルダに作成される
-CURRENT_DIR = os.getcwd()
-DATABASE_PATH = os.path.join(CURRENT_DIR, "test.db")  # /app/test.db
-DATABASE_URL = f"sqlite:///{DATABASE_PATH}"           # sqlite:////app/test.db
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -12,9 +12,6 @@
 
 ## to do
 - docs/project_summary.md に「ページ1、ページ2、ページ3」の説明を追加
-
-
-
 - Page2 + FastAPI
   - トークンの有効期限 (expires_delta) を適切に設定し、必要に応じてリフレッシュトークンの実装を検討する
     - リフレッシュトークンまでは実装していないので 優先度の低い to do としてメモしておく
@@ -68,6 +65,18 @@ PyJWT　←　いらない？？ Chainlit.py で使ってたかも。ならそ�
     - ui/Button/chainlit_button.tsx
     - ui/Input/chainlit_input.tsx
 
+## 注意事項
+- 起動時に出てくる「WARNING: Local config differs from linked project. Try updating supabase/config.toml」は気にしなくてOK。以下が説明。
+- 起動時に Supabase をリモートとローカルでリンクさせている(frontend/entrypoint.sh)
+- その際に Supabase の リモートリポジトリに合わせてローカルの方のスキーマ(frontend/supabase/config.toml)「storage」が削除されるが「storage」は現状使っていないの気にしなくてOK。以下が該当箇所。
+```
+aicodebasse-frontend-container         | -schemas = ["public", "storage", "graphql_public"]
+aicodebasse-frontend-container         | +schemas = ["public", "graphql_public"]
+```
+- このプロジェクトでは「storage」を使っていないにも関わらずリモート側に存在するのは、リポジトリのデフォルトとして「storage」が設定されているのかも？
+- 将来的に「storage」が使われる可能性もあるし、使う分には問題ないのでこのままで。
+
+
 
 ## backend
 app/: アプリケーションのメインコードを含みます。
@@ -103,7 +112,7 @@ AuthApiError: Invalid Refresh Token: Refresh Token Not Found
   - o+rx: その他のユーザーに読み取りと実行の権限を追加します。
   - このコマンドは、./backendディレクトリとその中の全てのファイルとディレクトリに対して、上記の権限を設定します。
 
-  
+
 ★Dockerのイメージをアップデートしないと FastAPI の修正が反映されないっぽい。Next.jsの方はブラウザのリロードだけで再コンパイルして反映される。
 
 - Docker を起動させて別のターミナルでプロジェクトルートディレクトリから「docker compose exec backend bash」を実行するとバックエンドのコンテナに入れる
