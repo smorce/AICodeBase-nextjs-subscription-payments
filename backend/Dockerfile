@@ -8,6 +8,9 @@ ARG GID=1002
 RUN addgroup --gid $GID appgroup && \
     adduser --disabled-password --gecos "" --uid $UID --gid $GID appuser
 
+# システムパッケージを更新し、bashをインストール
+RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # アプリケーションコードをコピー

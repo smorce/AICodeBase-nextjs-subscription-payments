@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e  # エラーが発生したら即座に終了
 
 # uvicornをバックグラウンドで実行
@@ -18,7 +18,7 @@ TMP_FILE=$(mktemp)
 grep -v '^CHAINLIT_AUTH_SECRET=' .env > "$TMP_FILE" || true
 
 # 新しい SECRET_LINE (CHAINLIT_AUTH_SECRET) を一時ファイルに追加
-echo -n $'\n' >> "$TMP_FILE"  # 改行を追加
+printf '\n' >> "$TMP_FILE"  # 改行を追加
 echo "$SECRET_LINE" >> "$TMP_FILE"
 
 # 一時ファイルを.envファイルに移動
@@ -28,6 +28,7 @@ mv "$TMP_FILE" .env
 [ -f "$TMP_FILE" ] && rm "$TMP_FILE"
 
 # コンテナ内に設定された環境変数に反映させるために、新しい.envファイルを読み込む
+# source コマンドを実行するには bash が必要
 source /app/.env
 
 # chainlitをフォアグラウンドで実行

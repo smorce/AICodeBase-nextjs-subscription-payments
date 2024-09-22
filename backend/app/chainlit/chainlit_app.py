@@ -12,6 +12,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 
 import hashlib
+from urllib.parse import urlparse, parse_qs
 from pydantic import BaseModel, Field
 import yaml
 from yaml.loader import SafeLoader
@@ -151,14 +152,34 @@ async def action_result_display(action_result: str):
 
 # ヘッダー認証は、ヘッダーを使用してユーザーを認証する簡単な方法です。通常、リバース プロキシに認証を委任するために使用されます。
 @cl.header_auth_callback
-def header_auth_callback(headers: Dict) -> Optional[cl.User]:
-    auth_header = headers.get("Authorization")
-    if not auth_header:
-        # 認証ヘッダーが存在しない場合
+def header_auth_callback(url: str) -> Optional[cl.User]:
+
+    print("デバッグ")
+    print(url)
+
+
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+    
+    access_token = query_params.get('access_token')
+    if not access_token:
+        # アクセストークンが存在しない場合
         return None
+    
     try:
-        # "Bearer "プレフィックスを取り除き アクセストークン を取得する
-        token = auth_header.split(" ")[1]
+        # アクセストークンは配列の形で返されるため、最初の要素を取得
+        token = access_token[0]
+
+    # auth_header = headers.get("Authorization")
+    # if not auth_header:
+    #     # 認証ヘッダーが存在しない場合
+    #     return None
+    # try:
+    #     # "Bearer "プレフィックスを取り除き アクセストークン を取得する
+    #     token = auth_header.split(" ")[1]
+
+
+
         # JWTトークンをデコードして検証
         payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"])
         user_id = payload.get("sub", "admin")    # デフォルトを"admin"に設定
