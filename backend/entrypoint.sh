@@ -28,7 +28,7 @@ mv "$TMP_FILE" .env
 [ -f "$TMP_FILE" ] && rm "$TMP_FILE"
 
 # コンテナ内に設定された環境変数に反映させるために、新しい.envファイルを読み込む
-# source コマンドを実行するには bash が必要
+# source コマンドを実行するには bash が必要なので sh から変更した
 source /app/.env
 
 # chainlitをフォアグラウンドで実行

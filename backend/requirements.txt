@@ -8,8 +8,8 @@ passlib[bcrypt]
 python-multipart
 PyJWT
 chainlit==1.0.506
-supabase==2.7.4
 langchain==0.1.16
 langchain-openai==0.1.4
 langchain-community==0.0.34
 langchain-google-genai
+langchain-core==0.1.46

@@ -12,13 +12,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 
 import hashlib
-from urllib.parse import urlparse, parse_qs
 from pydantic import BaseModel, Field
 import yaml
 from yaml.loader import SafeLoader
 
 import chainlit as cl
-from supabase import create_client, Client
 import jwt
 
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
@@ -150,26 +148,51 @@ async def action_result_display(action_result: str):
 # ===================================================================
 # 【ヘッダーによる認証・認可】
 
+def extract_access_token(cookie_header):
+    """
+    Cookieヘッダー文字列からaccess_tokenを抽出します。
+
+    Args:
+        cookie_header: Cookieヘッダー文字列
+
+    Returns:
+        access_tokenの値。見つからない場合はNoneを返します。
+    """
+    if not cookie_header:
+        return None
+
+    cookies = cookie_header.split(';')
+    for cookie in cookies:
+        cookie = cookie.strip()
+        if cookie.startswith('access_token='):
+            return cookie.split('=')[1]
+
+    return None
+
+
 # ヘッダー認証は、ヘッダーを使用してユーザーを認証する簡単な方法です。通常、リバース プロキシに認証を委任するために使用されます。
 @cl.header_auth_callback
-def header_auth_callback(url: str) -> Optional[cl.User]:
+def header_auth_callback(headers: Dict) -> Optional[cl.User]:
 
-    print("デバッグ")
-    print(url)
+    # Cookieヘッダーからaccess_tokenを抽出（Cookieヘッダーに refresh_token も入っていたので refresh_token も取り出すことは可能）
+    cookie_header = headers.get('Cookie', '')
+    if not cookie_header:
+        cookie_header = headers.get('cookie', '')
+    access_token = extract_access_token(cookie_header)
 
 
-    parsed_url = urlparse(url)
-    query_params = parse_qs(parsed_url.query)
-    
-    access_token = query_params.get('access_token')
+    # デバッグ
+    if access_token:
+        print(f"★access_token: {access_token}")  # ← 取得できている
+    else:
+        print("★access_tokenが見つかりません。")
+
+
     if not access_token:
         # アクセストークンが存在しない場合
         return None
     
     try:
-        # アクセストークンは配列の形で返されるため、最初の要素を取得
-        token = access_token[0]
-
     # auth_header = headers.get("Authorization")
     # if not auth_header:
     #     # 認証ヘッダーが存在しない場合
@@ -181,15 +204,18 @@ def header_auth_callback(url: str) -> Optional[cl.User]:
 
 
         # JWTトークンをデコードして検証
-        payload = jwt.decode(token, SUPABASE_JWT_SECRET, algorithms=["HS256"])
+        print("★デコードします")
+        payload = jwt.decode(access_token, SUPABASE_JWT_SECRET, algorithms=["HS256"])
+        print("★デコード完了")
         user_id = payload.get("sub", "admin")    # デフォルトを"admin"に設定
         role = payload.get("role", "admin")      # デフォルトロールを"admin"に設定
         return cl.User(
             identifier=user_id,
-            metadata={"role": role, "provider": "supabase"}
+            metadata={"role": role, "provider": "header"}
         )
     except (IndexError, jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         # トークンが無効または期限切れの場合、認証失敗
+        print("★認証失敗")
         return None
 
 
