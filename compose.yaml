@@ -10,6 +10,7 @@ services:
     container_name: aicodebasse-backend-container
     ports:
       - "6302:6302"
+      - "8491:8491"
     volumes:
       - ./backend:/app
     env_file:

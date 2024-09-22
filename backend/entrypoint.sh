@@ -18,7 +18,7 @@ TMP_FILE=$(mktemp)
 grep -v '^CHAINLIT_AUTH_SECRET=' .env > "$TMP_FILE" || true
 
 # 新しい SECRET_LINE (CHAINLIT_AUTH_SECRET) を一時ファイルに追加
-echo "" >> "$TMP_FILE"  # 空行を追加
+echo -n $'\n' >> "$TMP_FILE"  # 改行を追加
 echo "$SECRET_LINE" >> "$TMP_FILE"
 
 # 一時ファイルを.envファイルに移動
@@ -26,6 +26,9 @@ mv "$TMP_FILE" .env
 
 # 一時ファイルが残っている場合は削除
 [ -f "$TMP_FILE" ] && rm "$TMP_FILE"
+
+# コンテナ内に設定された環境変数に反映させるために、新しい.envファイルを読み込む
+source /app/.env
 
 # chainlitをフォアグラウンドで実行
 exec chainlit run app/chainlit/chainlit_app.py -w --host 0.0.0.0 --port 8491

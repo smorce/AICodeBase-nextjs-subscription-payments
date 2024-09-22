@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // アクセストークンをURLに含めてリダイレクト
-    const redirectUrl = new URL('https://d206-34-173-37-132.ngrok-free.app/');
+    const redirectUrl = new URL('http://127.0.0.1:8491/');
     redirectUrl.searchParams.set('access_token', session.access_token);
 
     return NextResponse.redirect(redirectUrl);
