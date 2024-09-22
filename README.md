@@ -29,7 +29,7 @@ NextResponse.redirect('https://d206-34-173-37-132.ngrok-free.app/');
 
 ★Chainlit を Webアプリケーションに組み込むところはできたので、Chainlit の認証をシームレスにできるように対応中。
 - Webアプリケーションでログインした後にヘッダーから Chainlit に飛ぶと、また Chainlit の方でログインしないといけない。ここをうまいことアクセストークンを渡すなりして、シームレスにログインできるようにしたい。
-→やった。ヘッダー認証に変更したので、SUPABASE_JWT_SECRET を SupabaseプロジェクトのJWTシークレットキーとして取得する。
+→やった。ヘッダー認証に変更したので、SUPABASE_JWT_SECRET を SupabaseプロジェクトのJWTシークレットキーとして取得した。
 あと、バックエンドとフロントエンドをわけたあと、
 pip install PyJWT
 して、ローカルで Chainlit.py 起動できるようにする。
@@ -37,15 +37,29 @@ pip install PyJWT
 Dockerコマンドは入っていたので、ビルドはできそう。
 Page2 のサンプル実装はできたので、あとは動かしてみるだけ。ユーザー登録とアイテム登録ができ、フロントエンドはNext.js、バックエンドはFastAPI、DBはSQLite。
 
+!pip install chainlit==1.0.506 langchain==0.1.16 langchain-openai==0.1.4 langchain-community==0.0.34 duckduckgo-search==5.3.0 wikipedia==1.4.0 -q
+!pip install -qU langchain-google-genai
+!pip install nest-asyncio pyngrok -q
+
+
 to do
 - Page2(FastAPI)のテスト
   - これがうまくいけば、今後はこれを参考に FastAPI が実装できる
 - ローカルで Chainlit.py の実装。Colaｂ ではうまくいったので、ローカルで起動した Chainlit にアクセスできればOK。ngrok の URL をローカルアドレスに変更する。
-  - chainlit run app.py -w --host "0.0.0.0" --port 8491
+  - chainlit run chainlit_app.py -w --host "0.0.0.0" --port 8491
     - この-wフラグは Chainlit に自動リロードを有効にするように指示するため、アプリケーションに変更を加えるたびにサーバーを再起動する必要はありません。これで、チャットボットの UI に http://localhost:8491 からアクセスできるはずです。
     
 
 PyJWT　←　いらない？？ Chainlit.py で使ってたかも。ならそっちを変えるか？
+→一般的な認証システムでは、passlibを使用してユーザーのパスワードをハッシュ化・保存し、jwtを使用して認証トークンを発行・管理します。
+
+バックエンドの entrypoint.sh は
+#!/bin/bash
+にした方が良い？？
+より軽量な
+#!/bin/sh
+にしている。
+
 
 
 
@@ -111,11 +125,32 @@ AuthApiError: Invalid Refresh Token: Refresh Token Not Found
   - g+rx: グループに読み取りと実行の権限を追加します。
   - o+rx: その他のユーザーに読み取りと実行の権限を追加します。
   - このコマンドは、./backendディレクトリとその中の全てのファイルとディレクトリに対して、上記の権限を設定します。
+- Docker のコンパイルで権限エラーが出た時はコンテナ側の権限だけでなく、ホスト側の権限を確認すること
+
+
 
 
 ★Dockerのイメージをアップデートしないと FastAPI の修正が反映されないっぽい。Next.jsの方はブラウザのリロードだけで再コンパイルして反映される。
 
 - Docker を起動させて別のターミナルでプロジェクトルートディレクトリから「docker compose exec backend bash」を実行するとバックエンドのコンテナに入れる
+
+
+## 起動関連のファイル
+- AICodeBase-nextjs-subscription-payments-Run.sh
+- compose.yaml
+- frontend/Dockerfile
+  - CLI インストール
+- frontend/entrypoint.sh
+  - CLI 認証用。Supabase とのリンクもここでやっている
+- backend/Dockerfile
+  - FastAPI を叩くために、ホストマシンと同じ UID と GID を使って実行ユーザーを作成している
+
+
+
+
+
+
+
 
 
 

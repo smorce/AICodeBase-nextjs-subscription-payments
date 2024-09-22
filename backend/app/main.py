@@ -19,12 +19,13 @@ DATABASE_PATH = os.path.join(CURRENT_DIR, "test.db")  # /app/test.db
 DATABASE_URL = f"sqlite:///{DATABASE_PATH}"           # sqlite:////app/test.db
 
 # .envファイルへのパスを構築
-env_path = os.path.join(CURRENT_DIR, '..', '.env')
+env_path = os.path.join(CURRENT_DIR, '.env')
 
 # .envファイルが存在するか確認
 if os.path.exists(env_path):
     # .envファイルを読み込む
     load_dotenv(dotenv_path=env_path)
+    print(".env file loaded successfully!")
 else:
     print(f"Warning: .env file not found at {env_path}")
 

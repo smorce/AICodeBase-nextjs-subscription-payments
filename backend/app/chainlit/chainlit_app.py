@@ -1,16 +1,6 @@
-★対応中。先にフロントエンドとバックエンドを分けた方が良いかも
-
-Emailとパスワードの認証方式を SUPABASE_JWT_SECRET で検証する方式に変更。
-
-SUPABASE_JWT_SECRET=your_supabase_jwt_secret
-
-SUPABASE_JWT_SECRETはSupabaseプロジェクトのJWTシークレットキーです。Supabaseのダッシュボードから取得できます。
-jwtライブラリがインストールされていない場合は、以下のコマンドでインストールしてください。
-pip install PyJWT
-
-
 import os
 from dotenv import load_dotenv
+from typing import Dict, Optional
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -30,13 +20,27 @@ import chainlit as cl
 from supabase import create_client, Client
 import jwt
 
-load_dotenv()
-
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
 os.chdir(os.path.dirname(__file__))
 
+# 現在のディレクトリ
+CURRENT_DIR = os.getcwd()
+
+# .envファイルへのパスを構築
+env_path = os.path.join(CURRENT_DIR, '..', '..', '.env')
+
+# .envファイルが存在するか確認
+if os.path.exists(env_path):
+    # .envファイルを読み込む
+    load_dotenv(dotenv_path=env_path)
+    print(".env file loaded successfully!")
+else:
+    print(f"Warning: .env file not found at {env_path}")
+
 # 環境変数からSupabaseのJWTシークレットを取得
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "Dummy")
+
+
 
 # ===================================================================
 

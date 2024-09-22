@@ -10,13 +10,19 @@ RUN addgroup --gid $GID appgroup && \
 
 WORKDIR /app
 
-COPY ./app /app/app
-COPY requirements.txt /app/
+# アプリケーションコードをコピー
+COPY . /app
 
+# Pythonの依存関係をインストール
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
+
+# スクリプトの所有権をappuserに変更し、実行権限を付与
+RUN chown -R appuser:appgroup /app && \
+    chmod +x /app/entrypoint.sh
 
 # デフォルトユーザーを設定
 USER appuser
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "6302"]
+# エントリーポイント
+ENTRYPOINT ["./entrypoint.sh"]

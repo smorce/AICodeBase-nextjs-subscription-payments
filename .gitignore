@@ -180,3 +180,6 @@ frontend/node_modules/
 
 # 追加
 github_token.txt
+.chainlit/
+.files/
+【bk v1】chainlit_app.py
