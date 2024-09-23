@@ -84,6 +84,10 @@ aicodebasse-frontend-container         | +schemas = ["public", "graphql_public"]
 - 認証エラーが出ていた件
   - 開発中の古いアクセストークンがずっと残っていたせい？？ 端末を再起動したら直った
   - 開発中は毎回Webアプリケーションからサインアウトした方が良いかも
+- WARN[0000] The "Ev_7d" variable is not set. Defaulting to a blank string. みたいなエラーが出る理由
+  - .env を読み込む際 に CHAINLIT_AUTH_SECRET が残っているから
+  - "F4H0/$Ev_7d*Qzf,%2xv_0Av" のような文字列になっているときに Ev_7d の前に エスケープ文字が入っているからかも
+  - どっちにしても新しい値で上書きされるので気にしないで OK
 
 
 
