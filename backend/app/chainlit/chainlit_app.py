@@ -3,6 +3,9 @@ import base64
 import json
 import re
 import urllib.parse
+import ntplib
+import time
+from datetime import datetime
 from dotenv import load_dotenv
 from typing import Dict, Optional
 from langchain_core.prompts import (
@@ -23,16 +26,6 @@ from yaml.loader import SafeLoader
 import chainlit as cl
 import jwt
 from supabase import create_client, Client
-
-
-# ----------------------------------------
-# 問題ないなら ntplib は消したい
-import ntplib
-import time
-from datetime import datetime
-# ----------------------------------------
-
-
 
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
 os.chdir(os.path.dirname(__file__))

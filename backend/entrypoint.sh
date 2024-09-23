@@ -15,7 +15,8 @@ TMP_FILE=$(mktemp)
 grep -v '^CHAINLIT_AUTH_SECRET=' .env > "$TMP_FILE" || true
 
 # 新しい SECRET_LINE (CHAINLIT_AUTH_SECRET) を一時ファイルに追加
-echo "$SECRET_LINE" >> "$TMP_FILE"  # 改行はechoが自動で追加します
+# -nオプションを使用することで、echoコマンドは末尾に改行を追加せずに出力する
+echo -n "$SECRET_LINE" >> "$TMP_FILE"
 
 # 各行の末尾の余分な空白を削除
 sed -i 's/[[:space:]]*$//' "$TMP_FILE"

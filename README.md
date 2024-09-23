@@ -50,16 +50,6 @@ to do
     - この-wフラグは Chainlit に自動リロードを有効にするように指示するため、アプリケーションに変更を加えるたびにサーバーを再起動する必要はありません。これで、チャットボットの UI に http://localhost:8491 からアクセスできるはずです。
     
 
-PyJWT　←　いらない？？ Chainlit.py で使ってたかも。ならそっちを変えるか？
-→一般的な認証システムでは、passlibを使用してユーザーのパスワードをハッシュ化・保存し、jwtを使用して認証トークンを発行・管理します。
-
-バックエンドの entrypoint.sh は
-#!/bin/bash
-にした方が良い？？
-より軽量な
-#!/bin/sh
-にしている。
-
 
 
 
@@ -156,7 +146,8 @@ AuthApiError: Invalid Refresh Token: Refresh Token Not Found
   - CLI 認証用。Supabase とのリンクもここでやっている
 - backend/Dockerfile
   - FastAPI を叩くために、ホストマシンと同じ UID と GID を使って実行ユーザーを作成している
-
+- backend/entrypoint.sh
+  - uvicorn と chainlit を起動させる用
 
 
 
