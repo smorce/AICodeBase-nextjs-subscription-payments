@@ -1,13 +1,6 @@
 #!/bin/bash
 set -e  # エラーが発生したら即座に終了
 
-# root 権限で NTPsec を使って時刻を同期（バックグラウンドで実行）
-ntpd -n &
-
-# 非rootユーザーに切り替え
-# 'appuser' ユーザーに切り替えて以下のコマンドを実行
-exec su appuser -c "bash" << 'EOF'
-
 # uvicornをバックグラウンドで実行
 uvicorn app.main:app --host 0.0.0.0 --port 6302 &
 
@@ -42,5 +35,3 @@ source /app/.env
 
 # chainlitをフォアグラウンドで実行（このタイミングで実行したあとに場所をCOPYで移動させているため、-w でリロードするとおかしくなる）
 exec chainlit run app/chainlit/chainlit_app.py -w --host 0.0.0.0 --port 8491
-
-EOF

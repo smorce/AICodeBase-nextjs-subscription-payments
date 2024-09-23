@@ -25,7 +25,7 @@ RUN chown -R appuser:appgroup /app && \
     chmod +x /app/entrypoint.sh
 
 # デフォルトユーザーを設定
-# USER appuser
+USER appuser
 
 # エントリーポイント
 ENTRYPOINT ["./entrypoint.sh"]

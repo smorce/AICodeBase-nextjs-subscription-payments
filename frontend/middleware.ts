@@ -1,36 +1,5 @@
 // @supabase/auth-helpers-nextjs は古い。今は @supabase/ssr パッケージを使用する
 // ----------------------------------
-// import { NextResponse } from 'next/server';
-// import type { NextRequest } from 'next/server';
-// import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-
-// export async function middleware(request: NextRequest) {
-//     const res = NextResponse.next();
-//     const supabase = createMiddlewareClient({ req: request, res });
-
-//     // セッションの更新を試みる（必要な場合）
-//     await supabase.auth.getSession();
-
-//     // ユーザーの認証状態を確認
-//     const {
-//         data: { user },
-//     } = await supabase.auth.getUser();
-
-//     // 認証されていない場合、サインインページにリダイレクト
-//     if (!user && request.nextUrl.pathname !== '/signin') {
-//         return NextResponse.redirect(new URL('/signin', request.url));
-//     }
-
-//     // 認証されている場合、APIサーバーへのリダイレクト
-//     if (user && request.nextUrl.pathname === '/') {
-//         const redirectUrl = new URL('http://127.0.0.1:8491/');
-//         return NextResponse.redirect(redirectUrl);
-//     }
-
-//     return res;
-// }
-
-
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';

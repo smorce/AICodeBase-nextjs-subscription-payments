@@ -207,7 +207,7 @@ def extract_access_token(cookie_header: str):
     decoded_text = urllib.parse.unquote(cookie_header)
     
     # 正規表現パターンの定義
-    access_token_pattern = r'access_token":"([^"]+)"'  # access_token を抽出するための正規表現
+    access_token_pattern  = r'access_token":"([^"]+)"'  # access_token を抽出するための正規表現
     refresh_token_pattern = r'refresh_token":"([^"]+)"'  # refresh_token を抽出するための正規表現
     
     # access_token の抽出
@@ -260,7 +260,7 @@ def decode_token_without_verification(token: str) -> dict:
     return json.loads(decoded)
 
 
-# JWTデコードが必要な場合は以下のように実装できます
+# JWTデコードが必要な場合は以下のように実装できます（使っていない）
 def decode_jwt(access_token: str) -> Dict:
     try:
         return jwt.decode(
