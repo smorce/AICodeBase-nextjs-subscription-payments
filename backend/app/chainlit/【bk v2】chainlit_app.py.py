@@ -1,8 +1,10 @@
+JWTトークンで検証していた方法。chainlit をリロードしないとアクセスできない。
+多分リロード時に新しいトークンが生成された可能性が高いです。新しいトークンは現在の時刻で発行されるため、問題なく検証をパスしたと考えられます。
+
+
 import os
 import base64
 import json
-import re
-import urllib.parse
 from dotenv import load_dotenv
 from typing import Dict, Optional
 from langchain_core.prompts import (
@@ -22,17 +24,6 @@ from yaml.loader import SafeLoader
 
 import chainlit as cl
 import jwt
-from supabase import create_client, Client
-
-
-# ----------------------------------------
-# 問題ないなら ntplib は消したい
-import ntplib
-import time
-from datetime import datetime
-# ----------------------------------------
-
-
 
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
 os.chdir(os.path.dirname(__file__))
@@ -57,29 +48,9 @@ if not SUPABASE_JWT_SECRET:
     print("エラー: SUPABASE_JWT_SECRET が環境変数に設定されていません。")
     # エラーハンドリングまたは終了処理
     exit(1)
+
+
 print(f"デバッグ SUPABASE_JWT_SECRET = {SUPABASE_JWT_SECRET}")
-
-
-
-# 環境変数から SUPABASE_URL を取得
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-if not SUPABASE_URL:
-    print("エラー: SUPABASE_URL が環境変数に設定されていません。")
-    # エラーハンドリングまたは終了処理
-    exit(1)
-print(f"デバッグ SUPABASE_URL = {SUPABASE_URL}")
-
-# 環境変数から SUPABASE_KEY を取得
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-if not SUPABASE_KEY:
-    print("エラー: SUPABASE_KEY が環境変数に設定されていません。")
-    # エラーハンドリングまたは終了処理
-    exit(1)
-print(f"デバッグ SUPABASE_KEY = {SUPABASE_KEY}")
-
-# Supabaseクライアントの初期化。SUPABASE_KEY は ANON_KEY を指す
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 
 
 # ===================================================================
@@ -189,39 +160,27 @@ async def action_result_display(action_result: str):
 # ===================================================================
 # 【ヘッダーによる認証・認可】
 
-def extract_access_token(cookie_header: str):
+def extract_access_token(cookie_header):
     """
-    Cookieヘッダー文字列から access_token と refresh_token を抽出する関数。
+    Cookieヘッダー文字列からaccess_tokenを抽出します。
 
     Args:
-        cookie_header (str): access_token と refresh_token を含むテキスト。URLエンコードされている可能性があります。
+        cookie_header: Cookieヘッダー文字列
 
     Returns:
-        dict: access_token と refresh_token をキーとする辞書。
-              トークンが見つからない場合は、対応する値は None になります。
+        access_tokenの値。見つからない場合はNoneを返します。
     """
     if not cookie_header:
         return None
-    
-    # URLデコード
-    decoded_text = urllib.parse.unquote(cookie_header)
-    
-    # 正規表現パターンの定義
-    access_token_pattern = r'access_token":"([^"]+)"'  # access_token を抽出するための正規表現
-    refresh_token_pattern = r'refresh_token":"([^"]+)"'  # refresh_token を抽出するための正規表現
-    
-    # access_token の抽出
-    access_token_match = re.search(access_token_pattern, decoded_text)
-    access_token = access_token_match.group(1) if access_token_match else None
-    
-    # refresh_token の抽出
-    refresh_token_match = re.search(refresh_token_pattern, decoded_text)
-    refresh_token = refresh_token_match.group(1) if refresh_token_match else None
-    
-    return {
-        'access_token': access_token,
-        'refresh_token': refresh_token
-    }
+
+    cookies = cookie_header.split(';')
+    for cookie in cookies:
+        cookie = cookie.strip()
+        if cookie.startswith('access_token='):
+            return cookie.split('=')[1]
+
+    return None
+
 
 
 def decode_token_without_verification(token: str) -> dict:
@@ -260,76 +219,13 @@ def decode_token_without_verification(token: str) -> dict:
     return json.loads(decoded)
 
 
-# JWTデコードが必要な場合は以下のように実装できます
-def decode_jwt(access_token: str) -> Dict:
-    try:
-        return jwt.decode(
-            access_token,
-            SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            audience="authenticated"   # Supabaseのデフォルトは authenticated 。確認方法：Authentication ページ > Users で登録ユーザーが見える。アプリケーションにログインしているユーザーのレコードの一番右側の「…」をクリック > View user info でユーザー情報を確認できる
-        )
-    except jwt.ExpiredSignatureError:
-        print("トークンの有効期限が切れています")
-    except jwt.InvalidAudienceError:
-        print("認証に失敗しました（Audience不一致）")
-    except jwt.InvalidIssuedAtError:
-        print("トークンの発行時刻が無効です")
-    except jwt.InvalidTokenError as e:
-        print(f"無効なトークン: {e}")
-    except Exception as e:
-        print(f"トークンのデコード中に予期せぬエラーが発生しました: {e}")
-    return {}
-
-
-
-def check_time_sync(ntp_server="pool.ntp.org", max_offset=1):
-    client = ntplib.NTPClient()
-    
-    try:
-        # NTPサーバーから時刻を取得
-        response = client.request(ntp_server, version=3)
-        
-        # サーバー時刻
-        server_time = datetime.fromtimestamp(response.tx_time)
-        
-        # クライアント(ローカル)時刻
-        local_time = datetime.now()
-        
-        # 時差を計算(秒単位)
-        time_offset = abs((server_time - local_time).total_seconds())
-        
-        print(f"サーバー時刻: {server_time}")
-        print(f"ローカル時刻: {local_time}")
-        print(f"時差: {time_offset:.2f} 秒")
-        
-        # 許容範囲内かチェック
-        if time_offset <= max_offset:
-            print("時刻は同期しています。")
-            return True
-        else:
-            print(f"時刻が同期していません。許容範囲({max_offset}秒)を超えています。")
-            return False
-    
-    except ntplib.NTPException as e:
-        print(f"NTPサーバーとの通信エラー: {e}")
-        return False
-
-
-
 # ヘッダー認証は、ヘッダーを使用してユーザーを認証する簡単な方法です。通常、リバース プロキシに認証を委任するために使用されます。
 @cl.header_auth_callback
 def header_auth_callback(headers: Dict) -> Optional[cl.User]:
 
     # Cookieヘッダーからaccess_tokenを抽出（Cookieヘッダーに refresh_token も入っていたので refresh_token も取り出すことは可能）
     cookie_header = headers.get('Cookie', '') or headers.get('cookie', '')
-    token_json    = extract_access_token(cookie_header)
-    access_token  = token_json["access_token"]
-    refresh_token = token_json["refresh_token"]
-
-
-    # print(f"headers = {headers}")
-    # print(f"cookie_header = {cookie_header}")
+    access_token = extract_access_token(cookie_header)
 
 
     # デバッグ
@@ -352,30 +248,33 @@ def header_auth_callback(headers: Dict) -> Optional[cl.User]:
         print(f"トークンのデコードに失敗しました: {e}")
 
 
-    # 実行
-    check_time_sync()
-
 
     try:
-        # Supabaseを使用してセッションを検証
-        # アクセストークンの検証をSupabaseのサーバー側で行う
-        print("デバッグ1")
-        response = supabase.auth.get_user(access_token)
-        print("デバッグ2")
-        user = response.user
-
-        if user:
-            return cl.User(
-                identifier=user.email,
-                metadata={"role": user.role, "provider": "supabase"}
-            )
-        else:
-            print("有効なユーザーが見つかりません")
-            return None
-
+        # JWTトークンをデコードして検証
+        payload = jwt.decode(
+            access_token, 
+            SUPABASE_JWT_SECRET, 
+            algorithms=["HS256"],
+            audience="authenticated",                   # Supabaseのデフォルトは authenticated 。確認方法：Authentication ページ > Users で登録ユーザーが見える。アプリケーションにログインしているユーザーのレコードの一番右側の「…」をクリック > View user info でユーザー情報を確認できる
+            options={"verify_iat": True, "leeway": 30}  # 30秒のleewayを追加。トークンの発行時刻（iat）の検証時に30秒の誤差を許容
+        )
+        user_id = payload.get("email", "user")   # デフォルトを"user"に設定。Chainlit の画面で表示されるユーザーのこと。
+        role = payload.get("role", "user")       # デフォルトロールを"user"に設定。Supabase のデフォルトは authenticated 。
+        return cl.User(
+            identifier=user_id,
+            metadata={"role": role, "provider": "header"}
+        )
+    except jwt.ExpiredSignatureError:
+        print("トークンの有効期限が切れています")
+    except jwt.InvalidAudienceError:
+        print("認証に失敗しました（Audience不一致）")
+    except jwt.InvalidIssuedAtError:
+        print("トークンの発行時刻が無効です")
+    except jwt.InvalidTokenError as e:
+        print(f"無効なトークン: {e}")
     except Exception as e:
-        print(f"認証中にエラーが発生しました: {e}")
-        return None
+        print(f"認証中に予期せぬエラーが発生しました: {e}")
+    return None
 
 
 

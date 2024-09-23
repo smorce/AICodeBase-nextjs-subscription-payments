@@ -13,8 +13,14 @@ services:
       - "8491:8491"
     volumes:
       - ./backend:/app
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
     env_file:
       - ./backend/.env
+    environment:
+      - TZ=Asia/Tokyo
+    cap_add:
+      - SYS_TIME
     restart: always
     tty: true
     shm_size: '22.4gb'
@@ -36,9 +42,13 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro      
     env_file:
       - ./frontend/.env
       - ./frontend/.env.local    # .env と同じ名前の環境変数がある場合は .env.local の値で上書きされます。
+    environment:
+      - TZ=Asia/Tokyo
     depends_on:
       - backend
     restart: always
@@ -57,6 +67,10 @@ services:
       - frontend
     volumes:
       - ~/.config/stripe:/root/.config/stripe
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    environment:
+      - TZ=Asia/Tokyo
     restart: always
     tty: true
     shm_size: '3.2gb'

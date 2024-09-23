@@ -8,8 +8,8 @@ ARG GID=1002
 RUN addgroup --gid $GID appgroup && \
     adduser --disabled-password --gecos "" --uid $UID --gid $GID appuser
 
-# システムパッケージを更新し、bashをインストール
-RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
+# システムパッケージを更新し、bash と NTPsec をインストール
+RUN apt-get update && apt-get install -y bash ntpsec && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ RUN chown -R appuser:appgroup /app && \
     chmod +x /app/entrypoint.sh
 
 # デフォルトユーザーを設定
-USER appuser
+# USER appuser
 
 # エントリーポイント
 ENTRYPOINT ["./entrypoint.sh"]

@@ -119,6 +119,9 @@ app/: アプリケーションのメインコードを含みます。
 
 
 - supabase link すると diff supabase/config.toml xjgqnwcvxhzcuwsl のエラーが出て、スキーマから storage が削除されてしまう。でも、ローカルでもリモートでも storage は使っていているっぽいので、本当はリモートの方では使っていないから、ローカルの方も削除されている？？ リモート側に同期されただけな気がするので一旦このままで。 AICodeBase のころから text_project1 を流用しているので、それも影響している？？
+ - https://supabase.com/dashboard/project/xjgqnwcvxhzcuwsljgzz/settings/api
+   - Data API Settings > Exposed schemas で storage を追加すれば良いのかも？
+
 
 - Pricing ページにアクセスすると以下のエラーが出るが、Docker にする前はこういうエラーがでなかった。
 AuthApiError: Invalid Refresh Token: Refresh Token Not Found
