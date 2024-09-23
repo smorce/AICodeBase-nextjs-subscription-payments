@@ -244,13 +244,15 @@ def header_auth_callback(headers: Dict) -> Optional[cl.User]:
         print(f"トークンのデコードに失敗しました: {e}")
 
 
+
     try:
         # JWTトークンをデコードして検証
         payload = jwt.decode(
             access_token, 
             SUPABASE_JWT_SECRET, 
             algorithms=["HS256"],
-            audience="authenticated"  # Supabaseのデフォルトは authenticated 。確認方法：Authentication ページ > Users で登録ユーザーが見える。アプリケーションにログインしているユーザーのレコードの一番右側の「…」をクリック > View user info でユーザー情報を確認できる
+            audience="authenticated",                   # Supabaseのデフォルトは authenticated 。確認方法：Authentication ページ > Users で登録ユーザーが見える。アプリケーションにログインしているユーザーのレコードの一番右側の「…」をクリック > View user info でユーザー情報を確認できる
+            options={"verify_iat": True, "leeway": 30}  # 30秒のleewayを追加。トークンの発行時刻（iat）の検証時に30秒の誤差を許容
         )
         user_id = payload.get("email", "user")   # デフォルトを"user"に設定。Chainlit の画面で表示されるユーザーのこと。
         role = payload.get("role", "user")       # デフォルトロールを"user"に設定。Supabase のデフォルトは authenticated 。
@@ -258,12 +260,17 @@ def header_auth_callback(headers: Dict) -> Optional[cl.User]:
             identifier=user_id,
             metadata={"role": role, "provider": "header"}
         )
-    except jwt.InvalidAudienceError as e:
-        print(f"認証に失敗しました（Audience不一致）: {e}")
-        return None
+    except jwt.ExpiredSignatureError:
+        print("トークンの有効期限が切れています")
+    except jwt.InvalidAudienceError:
+        print("認証に失敗しました（Audience不一致）")
+    except jwt.InvalidIssuedAtError:
+        print("トークンの発行時刻が無効です")
+    except jwt.InvalidTokenError as e:
+        print(f"無効なトークン: {e}")
     except Exception as e:
-        print(f"認証に失敗しました: {e}")
-        return None
+        print(f"認証中に予期せぬエラーが発生しました: {e}")
+    return None
 
 
 

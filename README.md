@@ -89,6 +89,9 @@ aicodebasse-frontend-container         | +schemas = ["public", "graphql_public"]
 ```
 - このプロジェクトでは「storage」を使っていないにも関わらずリモート側に存在するのは、リポジトリのデフォルトとして「storage」が設定されているのかも？
 - 将来的に「storage」が使われる可能性もあるし、使う分には問題ないのでこのままで。
+- backend/requirements.txt
+  - 依存関係を解消するために langchain-core==0.1.46 を最後にインストールすること
+
 
 
 

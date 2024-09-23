@@ -18,8 +18,13 @@ TMP_FILE=$(mktemp)
 grep -v '^CHAINLIT_AUTH_SECRET=' .env > "$TMP_FILE" || true
 
 # 新しい SECRET_LINE (CHAINLIT_AUTH_SECRET) を一時ファイルに追加
-# printf '\n' >> "$TMP_FILE"  # 改行を追加（削除）
 echo "$SECRET_LINE" >> "$TMP_FILE"  # 改行はechoが自動で追加します
+
+# 各行の末尾の余分な空白を削除
+sed -i 's/[[:space:]]*$//' "$TMP_FILE"
+
+# 最後の空行を削除
+sed -i '/./,$!d' "$TMP_FILE"
 
 # 一時ファイルを.envファイルに移動
 mv "$TMP_FILE" .env
@@ -31,5 +36,5 @@ mv "$TMP_FILE" .env
 # source コマンドを実行するには bash が必要なので sh から変更した
 source /app/.env
 
-# chainlitをフォアグラウンドで実行
+# chainlitをフォアグラウンドで実行（このタイミングで実行したあとに場所をCOPYで移動させているため、-w でリロードするとおかしくなる）
 exec chainlit run app/chainlit/chainlit_app.py -w --host 0.0.0.0 --port 8491
