@@ -18,8 +18,8 @@ TMP_FILE=$(mktemp)
 grep -v '^CHAINLIT_AUTH_SECRET=' .env > "$TMP_FILE" || true
 
 # 新しい SECRET_LINE (CHAINLIT_AUTH_SECRET) を一時ファイルに追加
-printf '\n' >> "$TMP_FILE"  # 改行を追加
-echo "$SECRET_LINE" >> "$TMP_FILE"
+# printf '\n' >> "$TMP_FILE"  # 改行を追加（削除）
+echo "$SECRET_LINE" >> "$TMP_FILE"  # 改行はechoが自動で追加します
 
 # 一時ファイルを.envファイルに移動
 mv "$TMP_FILE" .env

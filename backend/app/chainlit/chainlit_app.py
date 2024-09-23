@@ -1,4 +1,6 @@
 import os
+import base64
+import json
 from dotenv import load_dotenv
 from typing import Dict, Optional
 from langchain_core.prompts import (
@@ -37,8 +39,14 @@ else:
     print(f"Warning: .env file not found at {env_path}")
 
 # 環境変数からSupabaseのJWTシークレットを取得
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "Dummy")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+if not SUPABASE_JWT_SECRET:
+    print("エラー: SUPABASE_JWT_SECRET が環境変数に設定されていません。")
+    # エラーハンドリングまたは終了処理
+    exit(1)
 
+
+print(f"デバッグ SUPABASE_JWT_SECRET = {SUPABASE_JWT_SECRET}")
 
 
 # ===================================================================
@@ -170,14 +178,49 @@ def extract_access_token(cookie_header):
     return None
 
 
+
+def decode_token_without_verification(token: str) -> dict:
+    """
+    JWTトークンを検証せずにデコードし、ペイロードの内容を返す。
+
+    この関数は、トークンの署名を検証せずにペイロードをデコードするため、
+    デバッグ目的でのみ使用すべきです。実際の認証には使用しないでください。
+
+    Args:
+        token (str): デコードするJWTトークン
+
+    Returns:
+        dict: デコードされたトークンのペイロード
+
+    Raises:
+        ValueError: トークンのフォーマットが無効な場合
+    """
+    # トークンをヘッダー、ペイロード、署名の3つの部分に分割
+    parts = token.split('.')
+    if len(parts) != 3:
+        raise ValueError("無効なトークンフォーマット")
+
+    # ペイロード部分を取得
+    payload = parts[1]
+
+    # Base64のパディングを調整
+    # Base64エンコードされた文字列の長さは4の倍数である必要があるため、
+    # 必要に応じて'='を追加してパディングを行う
+    payload += '=' * (-len(payload) % 4)
+
+    # Base64デコードを行い、バイト列を取得
+    decoded = base64.urlsafe_b64decode(payload)
+
+    # デコードされたJSONをPythonの辞書に変換して返す
+    return json.loads(decoded)
+
+
 # ヘッダー認証は、ヘッダーを使用してユーザーを認証する簡単な方法です。通常、リバース プロキシに認証を委任するために使用されます。
 @cl.header_auth_callback
 def header_auth_callback(headers: Dict) -> Optional[cl.User]:
 
     # Cookieヘッダーからaccess_tokenを抽出（Cookieヘッダーに refresh_token も入っていたので refresh_token も取り出すことは可能）
-    cookie_header = headers.get('Cookie', '')
-    if not cookie_header:
-        cookie_header = headers.get('cookie', '')
+    cookie_header = headers.get('Cookie', '') or headers.get('cookie', '')
     access_token = extract_access_token(cookie_header)
 
 
@@ -191,32 +234,37 @@ def header_auth_callback(headers: Dict) -> Optional[cl.User]:
     if not access_token:
         # アクセストークンが存在しない場合
         return None
-    
+
+
+    # デバッグ。トークンの内容を確認
     try:
-    # auth_header = headers.get("Authorization")
-    # if not auth_header:
-    #     # 認証ヘッダーが存在しない場合
-    #     return None
-    # try:
-    #     # "Bearer "プレフィックスを取り除き アクセストークン を取得する
-    #     token = auth_header.split(" ")[1]
+        token_content = decode_token_without_verification(access_token)
+        print("★Token content:", json.dumps(token_content, indent=2))
+    except Exception as e:
+        print(f"トークンのデコードに失敗しました: {e}")
 
 
-
+    try:
         # JWTトークンをデコードして検証
-        print("★デコードします")
-        payload = jwt.decode(access_token, SUPABASE_JWT_SECRET, algorithms=["HS256"])
-        print("★デコード完了")
-        user_id = payload.get("sub", "admin")    # デフォルトを"admin"に設定
-        role = payload.get("role", "admin")      # デフォルトロールを"admin"に設定
+        payload = jwt.decode(
+            access_token, 
+            SUPABASE_JWT_SECRET, 
+            algorithms=["HS256"],
+            audience="authenticated"  # Supabaseのデフォルトは authenticated 。確認方法：Authentication ページ > Users で登録ユーザーが見える。アプリケーションにログインしているユーザーのレコードの一番右側の「…」をクリック > View user info でユーザー情報を確認できる
+        )
+        user_id = payload.get("email", "user")   # デフォルトを"user"に設定。Chainlit の画面で表示されるユーザーのこと。
+        role = payload.get("role", "user")       # デフォルトロールを"user"に設定。Supabase のデフォルトは authenticated 。
         return cl.User(
             identifier=user_id,
             metadata={"role": role, "provider": "header"}
         )
-    except (IndexError, jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-        # トークンが無効または期限切れの場合、認証失敗
-        print("★認証失敗")
+    except jwt.InvalidAudienceError as e:
+        print(f"認証に失敗しました（Audience不一致）: {e}")
         return None
+    except Exception as e:
+        print(f"認証に失敗しました: {e}")
+        return None
+
 
 
 # ===================================================================
