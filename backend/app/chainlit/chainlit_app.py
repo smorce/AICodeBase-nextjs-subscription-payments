@@ -17,6 +17,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.callbacks import BaseCallbackHandler
 
 import hashlib
 from pydantic import BaseModel, Field
@@ -412,54 +413,88 @@ async def main(message: cl.Message):
 
     # 初回実行なら真
     if not is_finish_flag:
-      counter = cl.user_session.get("counter")
-      counter += 1
-      cl.user_session.set("counter", counter)
-      await cl.Message(content=f"{counter}回目のメッセージです。").send()   # 画面上に出力: 1回目の返答
+        counter = cl.user_session.get("counter")
+        counter += 1
+        cl.user_session.set("counter", counter)
+        await cl.Message(content=f"{counter}回目のメッセージです。").send()   # 画面上に出力: 1回目の返答
 
 
-      # 会話の履歴を取得
-      history = cl.user_session.get("history")
-      await cl.Message(content=history).send()   # 画面上に出力: 2回目の返答
+        # 会話の履歴を取得
+        history = cl.user_session.get("history")
+        await cl.Message(content=history).send()   # 画面上に出力: 2回目の返答
 
 
-      # ============================================================
-      # Step群
-      # ============================================================
-      # call_model はここ
-      # user_input = "指示: 300文字程度の短い小説を書いてください。"
-      user_input = message.content
+        # ============================================================
+        # Step群
+        # ============================================================
+        # call_model はここ
+        # user_input = "指示: 300文字程度の短い小説を書いてください。"
+        user_input = message.content
 
-      if user_input:
-          # LLM を呼び出す
-          ai_message = await call_model(user_input)
-
-
-
-      # 実行Toolの情報を取得
-      action_input = "使ったツールはこちらです"
-      if action_input:
-          # "実行ツール"のStep表示
-          await action_input_display(action_input)
-      action_result  = "使ったツールの実行結果はこちらです"
-      if action_result:
-          # "ツール結果"のStep表示
-          await action_result_display(action_result)
-      # ============================================================
+        if user_input:
+            # LLM を呼び出す
+            ai_message = await call_model(user_input)
 
 
-      # 最終的な応答を履歴に追加し、セッションに保存
-      history["messages"].append(HumanMessage(content=user_input))
-      history["messages"].append(AIMessage(content=ai_message))
-      cl.user_session.set("history", history)
 
-      await cl.Message(content=f"{ai_message}", author="assistant").send()   # 画面上に出力: 3回目の返答
-      is_finish_flag = True
-      cl.user_session.set("is_finish_flag", is_finish_flag)
+        # 実行Toolの情報を取得
+        action_input = "使ったツールはこちらです"
+        if action_input:
+            # "実行ツール"のStep表示
+            await action_input_display(action_input)
+        action_result  = "使ったツールの実行結果はこちらです"
+        if action_result:
+            # "ツール結果"のStep表示
+            await action_result_display(action_result)
+        # ============================================================
+
+
+
+        # --------------------------------------------------
+        # Stream the Output
+        # --------------------------------------------------
+        # ユーザーメッセージの下にステップをネストするかどうか
+        root = True
+
+        async with cl.Step(name="【ストリーミング】Gemini-1.5-flash-exp-0827", type="llm", root=root) as step:
+            step.input = user_input
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    SystemMessage(content=system_prompt),
+                    HumanMessagePromptTemplate.from_template("{user_input}"),
+                ]
+            )
+
+            model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-exp-0827",
+                                            temperature=1,
+                                            streaming=True,
+                                            )
+
+            output_parser = StrOutputParser()
+
+            chain = prompt | model | output_parser
+            
+            async for chunk in chain.astream({"user_input": user_input}):
+                # ステップの出力をストリームする
+                await step.stream_token(chunk)
+
+
+
+        # ============================================================
+
+        # 最終的な応答を履歴に追加し、セッションに保存
+        history["messages"].append(HumanMessage(content=user_input))
+        history["messages"].append(AIMessage(content=ai_message))
+        cl.user_session.set("history", history)
+
+        await cl.Message(content=f"{ai_message}", author="assistant").send()   # 画面上に出力: 3回目の返答
+        is_finish_flag = True
+        cl.user_session.set("is_finish_flag", is_finish_flag)
 
     else:
 
-      await cl.Message(content="AI: ご利用をありがとうございました。続けて入力することはできません。ブラウザをリロードするか新規チャットを開いてください。", author="assistant").send()
+        await cl.Message(content="AI: ご利用をありがとうございました。続けて入力することはできません。ブラウザをリロードするか新規チャットを開いてください。", author="assistant").send()
 
 
 
