@@ -477,8 +477,59 @@ async def main(message: cl.Message):
             
             async for chunk in chain.astream({"user_input": user_input}):
                 # ステップの出力をストリームする
+                # TaskWeaver は ここの chunk を HTML 化したものになっている気がする
+                chunk = f'<font color="red">{chunk}</font>'
                 await step.stream_token(chunk)
 
+
+
+        # --------------------------------------------------
+        # make_async と langchain における コールバック
+        # 処理が終わったら表示が消えてしまうのは仕様かも。結果は見せずに、「今YYYを呼び出してXXXを処理しています」という見え方をさせるためだけの機能っぽい。そのあとに処理が終わった response1 を見せる、という使い方が正しい。
+        # --------------------------------------------------
+        # ユーザーメッセージの下にステップをネストするかどうか
+        root = True
+
+        async with cl.Step(name="【make_asyncとコールバック】Gemini-1.5-flash-exp-0827", type="llm", root=root) as step:
+            step.input = user_input
+
+            # langchain における コールバック
+            # コールバックハンドラの各メソッドの対応しているイベントはあらかじめ決まっている。ストリーミングなら「on_llm_new_token」
+            # https://zenn.dev/umi_mori/books/prompt-engineer/viewer/langchain_callbacks
+            
+            # 方法：ストリーミングを行うための「on_llm_new_token」をオーバーライドして、メソッドとして定義して使う
+            class StreamHandler(BaseCallbackHandler):
+                def on_llm_new_token(self, token: str, **kwargs) -> None:
+                    # トークンが生成される度にこの関数が呼び出される。TaskWeaver では handle_post メソッドが呼び出される
+                    print(f"ストリーミングハンドラーの呼び出し！{token}")
+                    cl.Message(content="ストリーミングハンドラーの呼び出し！", author="assistant").send()
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    SystemMessage(content=system_prompt),
+                    HumanMessagePromptTemplate.from_template("{user_input}"),
+                ]
+            )
+            model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-exp-0827",
+                                            temperature=1,
+                                            streaming=True,
+                                            callbacks=[StreamHandler()]    # ここで LangChain のコールバックを指定する
+                                            )
+
+            output_parser = StrOutputParser()
+
+            chain = prompt | model | output_parser
+
+            # 本来なら ainvoke となるところが、make_async を使っているため invoke で非同期処理になる 
+            # response1 はチャンクではなく完成された文章になる
+            response1 = await cl.make_async(chain.invoke)(
+                {"user_input": user_input}
+                )
+            # このあと、 response1 を 表示する。処理が終わったら消えるので、response1 だけが残って表示される仕様
+            await cl.Message(content=f"response1 = {response1}").send()
+
+        
+        
 
 
         # ============================================================
