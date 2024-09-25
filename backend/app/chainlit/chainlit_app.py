@@ -219,6 +219,27 @@ async def streaming_call_llm(user_input: str):
 
 
 
+html_content = """<div class="tw-atta">
+    <div class="tw-atta-header">
+        <div class="tw-atta-key">Plan</div>
+        <div class="tw-atta-id">1</div>
+    </div>
+    <div class="tw-atta-cnt">
+        <div class="tw-plan">
+            <div class="tw-plan-item">
+                <div class="tw-plan-idx">1</div>
+                <div class="tw-plan-cnt">First step<span class="tw-end-cursor"></span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tw-status">
+    <span class="tw-status-updating"><svg viewBox="22 22 44 44"><circle></circle></svg></span>
+    <span class="tw-status-msg">Updating...</span>
+</div>"""
+
+
 # --------------------------------------------------
 # make_async と langchain における コールバック
 # make_async は処理が終わったら表示が消えてしまう仕様。結果は見せずに、「今YYYを呼び出してXXXを処理しています」という見え方をさせるためだけの機能。
@@ -252,6 +273,17 @@ async def call_makeAsync_and_callbacks(user_input: str):
         async def on_chat_model_start(self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs) -> None:
             print("チャットスタートモデルの呼び出し！")
             await cl.Message(content="【チャットスタートモデル】の呼び出し！", author="Planner Agent【make_asyncとコールバック】").send()
+            await cl.Message(content="【空行】", author="Planner Agent【make_asyncとコールバック】").send()
+            elements = [
+                cl.Text(content=html_content, display="inline")
+            ]
+            await cl.Message(
+                    content="Check out this text element!",
+                    elements=elements,
+                    author="Planner Agent【make_asyncとコールバック】",
+                ).send()
+
+
     # ---------------------------------------------------
 
 
