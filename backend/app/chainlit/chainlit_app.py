@@ -224,7 +224,7 @@ async def streaming_call_llm(user_input: str):
 # make_async は処理が終わったら表示が消えてしまう仕様。結果は見せずに、「今YYYを呼び出してXXXを処理しています」という見え方をさせるためだけの機能。
 # --------------------------------------------------
 # root: ユーザーメッセージの下にステップをネストするかどうか
-@cl.step(name="Planner Agent", type="llm", root=True)
+@cl.step(name="Planner Agent【make_asyncとコールバック】", type="llm", root=True)
 async def call_makeAsync_and_callbacks(user_input: str):
 
     # セッティング
@@ -245,13 +245,13 @@ async def call_makeAsync_and_callbacks(user_input: str):
         async def on_llm_new_token(self, token: str, **kwargs) -> None:
             # トークンが生成される度にこの関数が呼び出される。TaskWeaver では handle_post メソッドが呼び出された
             print(f"ストリーミングハンドラーの呼び出し！ token = {token}")
-            await cl.Message(content="【ストリーミングハンドラー】の呼び出し！", author="assistant").send()
+            await cl.Message(content="【ストリーミングハンドラー】の呼び出し！", author="Planner Agent【make_asyncとコールバック】").send()
 
     # 別の種類も追加してみた
     class ChatStartHandler(BaseCallbackHandler):
         async def on_chat_model_start(self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs) -> None:
             print("チャットスタートモデルの呼び出し！")
-            await cl.Message(content="【チャットスタートモデル】の呼び出し！", author="assistant").send()
+            await cl.Message(content="【チャットスタートモデル】の呼び出し！", author="Planner Agent【make_asyncとコールバック】").send()
     # ---------------------------------------------------
 
 
