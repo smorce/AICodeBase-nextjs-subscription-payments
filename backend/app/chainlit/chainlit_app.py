@@ -503,6 +503,7 @@ async def main(message: cl.Message):
                     # トークンが生成される度にこの関数が呼び出される。TaskWeaver では handle_post メソッドが呼び出される
                     print(f"ストリーミングハンドラーの呼び出し！{token}")
                     cl.Message(content="ストリーミングハンドラーの呼び出し！", author="assistant").send()
+                    print("画面に表示されないけど、ちゃんと動いているので合ってはいると思う。txtファイルに保存するようにすれば確認できるかも")
 
             prompt = ChatPromptTemplate.from_messages(
                 [
@@ -523,13 +524,19 @@ async def main(message: cl.Message):
             # 本来なら ainvoke となるところが、make_async を使っているため invoke で非同期処理になる 
             # response1 はチャンクではなく完成された文章になる
             response1 = await cl.make_async(chain.invoke)(
+            
                 {"user_input": user_input}
                 )
             # このあと、 response1 を 表示する。処理が終わったら消えるので、response1 だけが残って表示される仕様
-            await cl.Message(content=f"response1 = {response1}").send()
-
+            # await cl.Message(content=f"response1 = {response1}").send()
+            cur_step = cl.Step(name="aaa", root=False)
+            cl.run_sync(cur_step.__aenter__())
+            cl.run_sync(cur_step.stream_token(response1, True))
+            cl.run_sync(cur_step.__aexit__(None, None, None))  # type: ignore
         
         
+        # 上書きした
+        ai_message = response1
 
 
         # ============================================================
