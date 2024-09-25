@@ -224,7 +224,7 @@ async def streaming_call_llm(user_input: str):
 # make_async は処理が終わったら表示が消えてしまう仕様。結果は見せずに、「今YYYを呼び出してXXXを処理しています」という見え方をさせるためだけの機能。
 # --------------------------------------------------
 # root: ユーザーメッセージの下にステップをネストするかどうか
-@cl.step(name="【make_asyncとコールバック】Gemini-1.5-flash-exp-0827", type="llm", root=True)
+@cl.step(name="Planner Agent", type="llm", root=True)
 async def call_makeAsync_and_callbacks(user_input: str):
 
     # セッティング
@@ -288,7 +288,7 @@ async def call_makeAsync_and_callbacks(user_input: str):
         # TaskWeaver は ここの chunk を HTML 化したものになっている気がする
         chunk = f'<font color="blue">{chunk}</font>'
         full_txt += chunk
-        await cur_step.stream_token(chunk)
+        await cur_step.stream_token(chunk)   # root=False にするとココが表示されなくなる
 
     return full_txt
 
