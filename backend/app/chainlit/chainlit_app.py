@@ -7,17 +7,18 @@ import ntplib
 import time
 from datetime import datetime
 from dotenv import load_dotenv
-from typing import Dict, Optional
+from typing import Dict, Optional, Any, List
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage, AIMessage
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.callbacks import BaseCallbackHandler, StdOutCallbackHandler
+from langchain_core.runnables import RunnableConfig
 
 import hashlib
 from pydantic import BaseModel, Field
@@ -178,6 +179,120 @@ async def action_result_display(action_result: str):
     tool_result: {action_result}
     """
     return display_message
+
+
+# --------------------------------------------------
+# Stream the Output
+# --------------------------------------------------
+# root: ユーザーメッセージの下にステップをネストするかどうか
+@cl.step(name="【シンプルにストリーミングするだけ】Gemini-1.5-flash-exp-0827", type="llm", root=True)
+async def streaming_call_llm(user_input: str):
+
+    # セッティング
+    cur_step = cl.context.current_step
+    cur_step.input = user_input
+    full_txt = ""
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessage(content=system_prompt),
+            HumanMessagePromptTemplate.from_template("{user_input}"),
+        ]
+    )
+
+    model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-exp-0827",
+                                    temperature=1,
+                                    streaming=True,
+                                    )
+
+    output_parser = StrOutputParser()
+
+    chain = prompt | model | output_parser
+    
+    async for chunk in chain.astream({"user_input": user_input}):
+        # ステップの出力をストリームする
+        chunk = f'<font color="red">{chunk}</font>'
+        full_txt += chunk
+        await cur_step.stream_token(chunk)
+
+    return full_txt
+
+
+
+# --------------------------------------------------
+# make_async と langchain における コールバック
+# make_async は処理が終わったら表示が消えてしまう仕様。結果は見せずに、「今YYYを呼び出してXXXを処理しています」という見え方をさせるためだけの機能。
+# --------------------------------------------------
+# root: ユーザーメッセージの下にステップをネストするかどうか
+@cl.step(name="【make_asyncとコールバック】Gemini-1.5-flash-exp-0827", type="llm", root=True)
+async def call_makeAsync_and_callbacks(user_input: str):
+
+    # セッティング
+    cur_step = cl.context.current_step
+    cur_step.input = user_input
+    full_txt = ""
+
+    # ---------------------------------------------------
+    # イベントハンドラー
+    # ---------------------------------------------------
+
+    # langchain における コールバック
+    # コールバックハンドラの各メソッドの対応しているイベントはあらかじめ決まっている。ストリーミングなら「on_llm_new_token」
+    # https://zenn.dev/umi_mori/books/prompt-engineer/viewer/langchain_callbacks
+    
+    # コールバックの方法：ストリーミングを行うための「on_llm_new_token」をオーバーライドして、メソッドとして定義して使う
+    class StreamHandler(BaseCallbackHandler):
+        async def on_llm_new_token(self, token: str, **kwargs) -> None:
+            # トークンが生成される度にこの関数が呼び出される。TaskWeaver では handle_post メソッドが呼び出された
+            print(f"ストリーミングハンドラーの呼び出し！ token = {token}")
+            await cl.Message(content="【ストリーミングハンドラー】の呼び出し！", author="assistant").send()
+
+    # 別の種類も追加してみた
+    class ChatStartHandler(BaseCallbackHandler):
+        async def on_chat_model_start(self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs) -> None:
+            print("チャットスタートモデルの呼び出し！")
+            await cl.Message(content="【チャットスタートモデル】の呼び出し！", author="assistant").send()
+    # ---------------------------------------------------
+
+
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessage(content=system_prompt),
+            HumanMessagePromptTemplate.from_template("{user_input}"),
+        ]
+    )
+    model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-exp-0827",
+                                    temperature=1,
+                                    streaming=True,
+                                    )
+
+    output_parser = StrOutputParser()
+
+    chain = prompt | model | output_parser
+
+    # RunnableConfig に callbacks をキーとして callback オブジェクトのリストを設定
+        # StdOutCallbackHandler(): コンソールに途中出力するためのイベントハンドラー
+        # StreamHandler(): ストリーミング用のトークンが生成された時に呼び出されるイベントハンドラー
+        # ChatStartHandler(): チャットモデル呼び出し時のイベントハンドラー
+    config = RunnableConfig({'callbacks': [StdOutCallbackHandler(), StreamHandler(), ChatStartHandler()]})
+
+
+    # 以下の処理中に特定のイベントに発火して callbacks のイベントハンドラーが呼び出される
+    # 例えば、チャットモデルのスタート時やストリーミングトークンの出力時など
+    async for chunk in await cl.make_async(chain.astream)(
+            {"user_input": user_input},
+            config=config,                 # ここで LangChain のコールバックを指定する
+        ):
+        # ステップの出力をストリームする
+        # TaskWeaver は ここの chunk を HTML 化したものになっている気がする
+        chunk = f'<font color="blue">{chunk}</font>'
+        full_txt += chunk
+        await cur_step.stream_token(chunk)
+
+    return full_txt
+
+
 
 
 # ===================================================================
@@ -449,94 +564,22 @@ async def main(message: cl.Message):
         # ============================================================
 
 
-
-        # --------------------------------------------------
-        # Stream the Output
-        # --------------------------------------------------
-        # ユーザーメッセージの下にステップをネストするかどうか
-        root = True
-
-        async with cl.Step(name="【ストリーミング】Gemini-1.5-flash-exp-0827", type="llm", root=root) as step:
-            step.input = user_input
-
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessage(content=system_prompt),
-                    HumanMessagePromptTemplate.from_template("{user_input}"),
-                ]
-            )
-
-            model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-exp-0827",
-                                            temperature=1,
-                                            streaming=True,
-                                            )
-
-            output_parser = StrOutputParser()
-
-            chain = prompt | model | output_parser
-            
-            async for chunk in chain.astream({"user_input": user_input}):
-                # ステップの出力をストリームする
-                # TaskWeaver は ここの chunk を HTML 化したものになっている気がする
-                chunk = f'<font color="red">{chunk}</font>'
-                await step.stream_token(chunk)
+        # ============================================================
+        # Stepデコレータで LLM のストリーミング出力
+        # ============================================================
+        if user_input:
+            # LLM を呼び出す
+            ai_message = await streaming_call_llm(user_input)
 
 
-
-        # --------------------------------------------------
+        # ============================================================
         # make_async と langchain における コールバック
-        # 処理が終わったら表示が消えてしまうのは仕様かも。結果は見せずに、「今YYYを呼び出してXXXを処理しています」という見え方をさせるためだけの機能っぽい。そのあとに処理が終わった response1 を見せる、という使い方が正しい。
-        # --------------------------------------------------
-        # ユーザーメッセージの下にステップをネストするかどうか
-        root = True
+        # ============================================================
+        if user_input:
+            # LLM を呼び出す
+            ai_message = await call_makeAsync_and_callbacks(user_input)
 
-        async with cl.Step(name="【make_asyncとコールバック】Gemini-1.5-flash-exp-0827", type="llm", root=root) as step:
-            step.input = user_input
 
-            # langchain における コールバック
-            # コールバックハンドラの各メソッドの対応しているイベントはあらかじめ決まっている。ストリーミングなら「on_llm_new_token」
-            # https://zenn.dev/umi_mori/books/prompt-engineer/viewer/langchain_callbacks
-            
-            # 方法：ストリーミングを行うための「on_llm_new_token」をオーバーライドして、メソッドとして定義して使う
-            class StreamHandler(BaseCallbackHandler):
-                def on_llm_new_token(self, token: str, **kwargs) -> None:
-                    # トークンが生成される度にこの関数が呼び出される。TaskWeaver では handle_post メソッドが呼び出される
-                    print(f"ストリーミングハンドラーの呼び出し！{token}")
-                    cl.Message(content="ストリーミングハンドラーの呼び出し！", author="assistant").send()
-                    print("画面に表示されないけど、ちゃんと動いているので合ってはいると思う。txtファイルに保存するようにすれば確認できるかも")
-
-            prompt = ChatPromptTemplate.from_messages(
-                [
-                    SystemMessage(content=system_prompt),
-                    HumanMessagePromptTemplate.from_template("{user_input}"),
-                ]
-            )
-            model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-exp-0827",
-                                            temperature=1,
-                                            streaming=True,
-                                            callbacks=[StreamHandler()]    # ここで LangChain のコールバックを指定する
-                                            )
-
-            output_parser = StrOutputParser()
-
-            chain = prompt | model | output_parser
-
-            # 本来なら ainvoke となるところが、make_async を使っているため invoke で非同期処理になる 
-            # response1 はチャンクではなく完成された文章になる
-            response1 = await cl.make_async(chain.invoke)(
-            
-                {"user_input": user_input}
-                )
-            # このあと、 response1 を 表示する。処理が終わったら消えるので、response1 だけが残って表示される仕様
-            # await cl.Message(content=f"response1 = {response1}").send()
-            cur_step = cl.Step(name="aaa", root=False)
-            cl.run_sync(cur_step.__aenter__())
-            cl.run_sync(cur_step.stream_token(response1, True))
-            cl.run_sync(cur_step.__aexit__(None, None, None))  # type: ignore
-        
-        
-        # 上書きした
-        ai_message = response1
 
 
         # ============================================================
