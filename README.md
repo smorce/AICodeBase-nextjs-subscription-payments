@@ -141,6 +141,10 @@ AuthApiError: Invalid Refresh Token: Refresh Token Not Found
 - Docker を起動させて別のターミナルでプロジェクトルートディレクトリから「docker compose exec backend bash」を実行するとバックエンドのコンテナに入れる
 
 
+- 「.chainlit/config.toml」の unsafe_allow_html を true にしないと CSS や HTML が適用できない
+
+
+
 ## 起動関連のファイル
 - AICodeBase-nextjs-subscription-payments-Run.sh
 - compose.yaml

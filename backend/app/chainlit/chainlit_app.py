@@ -222,13 +222,13 @@ async def streaming_call_llm(user_input: str):
 html_content = """<div class="tw-atta">
     <div class="tw-atta-header">
         <div class="tw-atta-key">Plan</div>
-        <div class="tw-atta-id">1</div>
+        <div class="tw-atta-id">タスクid 1</div>
     </div>
     <div class="tw-atta-cnt">
         <div class="tw-plan">
             <div class="tw-plan-item">
                 <div class="tw-plan-idx">1</div>
-                <div class="tw-plan-cnt">First step<span class="tw-end-cursor"></span></div>
+                <div class="tw-plan-cnt">ファーストステップはこれ<span class="tw-end-cursor"></span></div>
             </div>
         </div>
     </div>
@@ -273,12 +273,11 @@ async def call_makeAsync_and_callbacks(user_input: str):
         async def on_chat_model_start(self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs) -> None:
             print("チャットスタートモデルの呼び出し！")
             await cl.Message(content="【チャットスタートモデル】の呼び出し！", author="Planner Agent【make_asyncとコールバック】").send()
-            await cl.Message(content="【空行】", author="Planner Agent【make_asyncとコールバック】").send()
             elements = [
                 cl.Text(content=html_content, display="inline")
             ]
             await cl.Message(
-                    content="Check out this text element!",
+                    content="【チャットスタートモデルと一緒に呼び出し】Check out this text element!",
                     elements=elements,
                     author="Planner Agent【make_asyncとコールバック】",
                 ).send()
