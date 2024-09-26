@@ -2,12 +2,14 @@ import os
 import base64
 import json
 import re
+import functools
+import requests
 import urllib.parse
 import ntplib
 import time
 from datetime import datetime
 from dotenv import load_dotenv
-from typing import Dict, Optional, Any, List
+from typing import Dict, Optional, Any, List, Tuple
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
@@ -92,38 +94,174 @@ welcome_message = """レポートの目次を相談して決める プログラ�
 
 """
 # ===================================================================
+# 【HTMLで表示するためのヘルパーファンクション】
+
+# AttachmentTypeクラスの定義
+class AttachmentType:
+    plan = 'plan'
+    init_plan = 'init_plan'
+    execution_result = 'execution_result'
+    reply_content = 'reply_content'
+    other = 'other'
+
+
+def elem(name: str, cls: str = "", attr: Dict[str, str] = {}, **attr_dic: str):
+    all_attr = {**attr, **attr_dic}
+    if cls:
+        all_attr.update({"class": cls})
+
+    attr_str = ""
+    if len(all_attr) > 0:
+        attr_str += "".join(f' {k}="{v}"' for k, v in all_attr.items())
+
+    def inner(*children: str):
+        children_str = "".join(children)
+        return f"<{name}{attr_str}>{children_str}</{name}>"
+
+    return inner
+
+def txt(content: str, br: bool = True):
+    content = content.replace("<", "&lt;").replace(">", "&gt;")
+    if br:
+        content = content.replace("\n", "<br>")
+    else:
+        content = content.replace("\n", "&#10;")
+    return content
+
+div = functools.partial(elem, "div")
+span = functools.partial(elem, "span")
+blinking_cursor = span("tw-end-cursor")()
+
+def is_link_clickable(url: str) -> bool:
+    if url:
+        try:
+            response = requests.get(url, timeout=5)
+            # ステータスコードが200番台または300番台であればリンクは有効
+            return response.status_code >= 200 and response.status_code < 400
+        except requests.exceptions.RequestException:
+            return False
+    else:
+        return False
+
+def format_attachment(
+    attachment: Tuple[str, str, str, bool]
+) -> str:
+    id, a_type, msg, is_end = attachment
+    cur_tatus = "Updating(ベタ書きにしているがココも引数にしたい)"
+    header = div("tw-atta-header")(
+        div("tw-atta-key")(
+            " ".join([item.capitalize() for item in a_type.split("_")]),
+        ),
+        div("tw-atta-id")(id),
+    )
+    atta_cnt: List[str] = []
+
+
+    if a_type in [AttachmentType.plan, AttachmentType.init_plan]:
+        items: List[str] = []
+        # lines = msg.split("\n")
+        # 無駄な空白行が存在することも考慮した
+        lines = [line.strip() for line in msg.split("\n") if line.strip()]
+        for idx, row in enumerate(lines):
+            item = row
+            if "." in row and row.split(".")[0].isdigit():
+                item = row.split(".", 1)[1].strip()
+            items.append(
+                div("tw-plan-item")(
+                    div("tw-plan-idx")(str(idx + 1)),
+                    div("tw-plan-cnt")(
+                        txt(item),
+                        blinking_cursor if not is_end and idx == len(lines) -1 else "",
+                    ),
+                ),
+            )
+        atta_cnt.append(div("tw-plan")(*items))
+    elif a_type in [AttachmentType.execution_result]:
+        atta_cnt.append(
+            elem("pre", "tw-execution-result")(
+                elem("code")(txt(msg)),
+            ),
+        )
+    elif a_type in [AttachmentType.reply_content]:
+        atta_cnt.append(
+            elem("pre", "tw-python", {"data-lang": "python"})(
+                elem("code", "language-python")(txt(msg, br=False)),
+            ),
+        )
+    else:
+        atta_cnt.append(txt(msg))
+        if not is_end:
+            atta_cnt.append(blinking_cursor)
+
+
+    atta_div = div("tw-atta")(
+        header,
+        div("tw-atta-cnt")(*atta_cnt),
+    )
+    
+    circle_div = div("tw-status")(
+        span("tw-status-updating")(
+            elem("svg", viewBox="22 22 44 44")(elem("circle")()),
+        ),
+        span("tw-status-msg")(txt(cur_tatus + "...")),
+    )
+
+    if is_end:
+        return atta_div, ""
+    else:
+        return atta_div, circle_div
 
 
 
-# ステップの実行結果は必ず画面上に表示される仕様。多分リターンすると表示されるのかも。デコレーターの引数で表示を制御するフラグがあれば消すことはできそう
+def format_message(message: str, is_end: bool) -> str:
+    content = txt(message, br=False)
+    begin_regex = re.compile(r"^```(\w*)$", re.MULTILINE)
+    end_regex = re.compile(r"^```$", re.MULTILINE)
+
+    position = 0
+    while True:
+        start_label = begin_regex.search(content, position)
+        if not start_label:
+            break
+        start_pos = start_label.start()
+        lang_tag = start_label.group(1)
+        content = (
+            content[:start_pos]
+            + f'<pre data-lang="{lang_tag}"><code class="language-{lang_tag}">'
+            + content[start_label.end()+1:]  # +1 to skip newline
+        )
+
+        end_label = end_regex.search(content, start_pos)
+        if not end_label:
+            content += "</code></pre>"
+            break
+        end_pos = end_label.start()
+        content = (
+            content[:end_pos]
+            + "</code></pre>"
+            + content[end_label.end()+1:]  # +1 to skip newline
+        )
+        position = end_pos
+
+    # 不要
+    # if not is_end:
+    #     content += blinking_cursor
+
+    return content
+
+
+
+# ===================================================================
+
+# ステップの実行結果は必ず画面上に表示される仕様。多分リターンすると表示されるのかも。デコレーターの引数で表示を制御するフラグがあれば消すことはできそう → root=False で消える気がする
 @cl.step(name="Calling LLM")
 async def call_model(user_input: str):
-    # -------------------------------------------------------------------------
-    # ストリーミング
-    # -------------------------------------------------------------------------
-    # ストリーミング表示のイメージ。やるなら ChatGoogleGenerativeAI のストリーミングを調べないといけない
-    # 空のメッセージを送信して、ストリーミングする場所を用意しておく
-    # agent_message = cl.Message(content="")
-    # await agent_message.send()
-
-    ### ここを ChatGoogleGenerativeAI の LCEL記法(streaming) に置き換え
-    # stream = await client.chat.completions.create(
-    #     messages=message_history, stream=True, **settings
-    # )
-
-    # async for part in stream:
-    #     if token := part.choices[0].delta.content or "":
-    #         await agent_message.stream_token(token)
-
-    # 空っぽの部分をガンガン ストリーミングで更新していく
-    # await agent_message.update()
-    # -------------------------------------------------------------------------
-
 
     model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-exp-0827",
                                    temperature=1,
-                                   streaming=True
+                                   streaming=False
                                    )
+
     prompt = ChatPromptTemplate.from_messages(
         [
             # 毎回必ず含まれるSystemプロンプトを追加
@@ -611,6 +749,97 @@ async def main(message: cl.Message):
             ai_message = await call_makeAsync_and_callbacks(user_input)
 
 
+        # ============================================================
+        # HTML の表示
+        # ============================================================
+        # ★実際には msg の部分は LLM の出力になる想定
+        # Plan, init plan のメッセージは余計な文章は入れずに、プランの箇条書きだけにすること
+        description    = "Plan, init plan タイプの添付ファイルのテスト"
+        attachment_id  = "12345"
+        a_type         = AttachmentType.plan
+        is_end         = True
+        msg            = """1. **テーマを決める:**
+
+2.**ターゲット読者を想定する:**
+3. **構成を考える:**
+
+4. **下調べと情報収集:**
+
+5. **執筆する:**
+6.**推敲・校正する:**
+
+7.**タイトルと見出しを最適化する:**
+
+8. **画像や動画を追加する (必要に応じて):**
+
+9.**公開する:**
+
+10. **宣伝・拡散する:**
+
+11.**フィードバックを分析し、改善する:**"""
+
+        await cl.Message(content=f"テストケース {attachment_id}: {description}", author="HTMLテスト").send()
+        await cl.Message(content="【以下がHTML表示(formatted_attachment)】", author="HTMLテスト").send()
+        formatted_attachment, circle_div = format_attachment((attachment_id, a_type, msg, is_end))
+        formatted_attachment = formatted_attachment + ("\n\n" + circle_div if not is_end else "")
+        await cl.Message(content="テックブログを書くための手順は以下の通りです。" + "\n" + formatted_attachment, author="HTMLテスト").send()
+        await cl.Message(content="【以下が完成したユーザー向けのメッセージで、安全にフォーマットされたテキスト(formatted_message)】", author="HTMLテスト").send()
+        formatted_message    = format_message(formatted_attachment, is_end=is_end)
+        await cl.Message(content="テックブログを書くための手順は以下の通りです。" + "\n" + formatted_message, author="HTMLテスト").send()
+
+
+        # ------------
+
+        description    = "Execution Resultタイプの添付ファイルのテスト"
+        attachment_id  = "67890"
+        a_type         = AttachmentType.execution_result
+        is_end         = True
+        msg            = "以下が実行結果の出力です。\n\n~~~~~"
+
+        await cl.Message(content=f"テストケース {attachment_id}: {description}", author="HTMLテスト").send()
+        await cl.Message(content="【以下がHTML表示(formatted_attachment)】", author="HTMLテスト").send()
+        formatted_attachment, circle_div = format_attachment((attachment_id, a_type, msg, is_end))
+        formatted_attachment = formatted_attachment + ("\n\n" + circle_div if not is_end else "")
+        await cl.Message(content=formatted_attachment, author="HTMLテスト").send()
+        await cl.Message(content="【以下が完成したユーザー向けのメッセージで、安全にフォーマットされたテキスト(formatted_message)】", author="HTMLテスト").send()
+        formatted_message    = format_message(formatted_attachment, is_end=is_end)
+        await cl.Message(content=formatted_message, author="HTMLテスト").send()
+
+
+        # ------------
+
+        description    = "Reply Contentタイプの添付ファイルのテスト"
+        attachment_id  = "54321"
+        a_type         = AttachmentType.reply_content
+        is_end         = True
+        msg            = "def hello_world():\n    print('Hello, world!')"
+
+        await cl.Message(content=f"テストケース {attachment_id}: {description}", author="HTMLテスト").send()
+        await cl.Message(content="【以下がHTML表示(formatted_attachment)】", author="HTMLテスト").send()
+        formatted_attachment, circle_div = format_attachment((attachment_id, a_type, msg, is_end))
+        formatted_attachment = formatted_attachment + ("\n\n" + circle_div if not is_end else "")
+        await cl.Message(content=formatted_attachment, author="HTMLテスト").send()
+        await cl.Message(content="【以下が完成したユーザー向けのメッセージで、安全にフォーマットされたテキスト(formatted_message)】", author="HTMLテスト").send()
+        formatted_message    = format_message(formatted_attachment, is_end=is_end)
+        await cl.Message(content=formatted_message, author="HTMLテスト").send()
+
+
+        # ------------
+
+        description    = "Otherタイプの添付ファイルの未完了メッセージのテスト"
+        attachment_id  = "09876"
+        a_type         = AttachmentType.other
+        is_end         = False
+        msg            = "未完了のメッセージです..."
+
+        await cl.Message(content=f"テストケース {attachment_id}: {description}", author="HTMLテスト").send()
+        await cl.Message(content="【以下がHTML表示(formatted_attachment)】", author="HTMLテスト").send()
+        formatted_attachment, circle_div = format_attachment((attachment_id, a_type, msg, is_end))
+        formatted_attachment = formatted_attachment + ("\n\n" + circle_div if not is_end else "")
+        await cl.Message(content=formatted_attachment, author="HTMLテスト").send()
+        await cl.Message(content="【以下が完成したユーザー向けのメッセージで、安全にフォーマットされたテキスト(formatted_message)】", author="HTMLテスト").send()
+        formatted_message    = format_message(formatted_attachment, is_end=is_end)
+        await cl.Message(content=formatted_message, author="HTMLテスト").send()
 
 
         # ============================================================
