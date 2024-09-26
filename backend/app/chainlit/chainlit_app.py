@@ -218,7 +218,7 @@ async def streaming_call_llm(user_input: str):
     return full_txt
 
 
-
+# ★テストとして以下を書いたが実際には TaskWeaver のコードを流用してコンテンツを HTML 化したい
 html_content = """<div class="tw-atta">
     <div class="tw-atta-header">
         <div class="tw-atta-key">Plan</div>
