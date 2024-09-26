@@ -46,8 +46,12 @@ to do
 - テストはした。実際には TaskWeaver のコードを流用してコンテンツを HTML 化したい
   - https://github.com/microsoft/TaskWeaver/blob/main/playground/UI/app.py
   - Evernote に書いたやつを組み込む。 input が LLM が考えた内容で Chainlit に入力するものになる。あとは、「タスクid 1」みたいなアウトプットを LLM が生成できれば良い。
+- TaskWeaver を使わないなら 最新版の pip install chainlit==1.2.0 に変更しても問題ないか？ その場合、toml ファイルを削除して新しい toml ファイルの以下を変更する。
 
-
+- # ココを true に変更しないと HTML がプレーンテキストとして解釈されてしまう
+  - unsafe_allow_html = true
+- custom_css = "/public/style_v1.css"
+- name = "チャットボット"
 
 
 ## done
