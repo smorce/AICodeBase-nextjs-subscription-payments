@@ -43,9 +43,7 @@ Page2 のサンプル実装はできたので、あとは動かしてみるだ�
 
 
 to do
-- テストはした。実際には TaskWeaver のコードを流用してコンテンツを HTML 化したい
-  - https://github.com/microsoft/TaskWeaver/blob/main/playground/UI/app.py
-  - Evernote に書いたやつを組み込む。 input が LLM が考えた内容で Chainlit に入力するものになる。あとは、「タスクid 1」みたいなアウトプットを LLM が生成できれば良い。
+- GPTリサーチャーを組み込む
 - TaskWeaver を使わないなら 最新版の pip install chainlit==1.2.0 に変更しても問題ないか？ LangChain 周りも影響受けるような気はする。大丈夫なら、toml ファイルを削除して新しい toml ファイルの以下を変更する。
   - # ココを true に変更しないと HTML がプレーンテキストとして解釈されてしまう
     - unsafe_allow_html = true
@@ -73,6 +71,10 @@ to do
 - ローカルで Chainlit.py の実装。Colaｂ ではうまくいったので、ローカルで起動した Chainlit にアクセスできればOK。ngrok の URL をローカルアドレスに変更する。
   - chainlit run chainlit_app.py -w --host "0.0.0.0" --port 8491
     - この-wフラグは Chainlit に自動リロードを有効にするように指示するため、アプリケーションに変更を加えるたびにサーバーを再起動する必要はありません。これで、チャットボットの UI に http://localhost:8491 からアクセスできるはずです。
+- テストはした。実際には TaskWeaver のコードを流用してコンテンツを HTML 化したい
+  - https://github.com/microsoft/TaskWeaver/blob/main/playground/UI/app.py
+  - Evernote に書いたやつを組み込む。 input が LLM が考えた内容で Chainlit に入力するものになる。あとは、「タスクid 1」みたいなアウトプットを LLM が生成できれば良い。
+
 
 
 
