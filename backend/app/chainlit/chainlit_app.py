@@ -105,7 +105,20 @@ class AttachmentType:
     other = 'other'
 
 
+# こちらのコードはHTML要素を動的に生成するためのヘルパー関数と、特定のHTMLタグに関するショートカットを定義しています。
 def elem(name: str, cls: str = "", attr: Dict[str, str] = {}, **attr_dic: str):
+    """
+    指定されたHTML要素を生成する関数です。
+
+    Parameters:
+        name (str): 生成するHTML要素の名前。
+        cls (str): 要素に適用するクラス名。省略可能。
+        attr (Dict[str, str]): 属性とその値を持つ辞書。省略可能。
+        **attr_dic (str): 任意の数の追加属性をキーワード引数として受け取ります。
+
+    Returns:
+        function: 子要素を引数として受け取り、完全なHTML要素を文字列として返す関数。
+    """
     all_attr = {**attr, **attr_dic}
     if cls:
         all_attr.update({"class": cls})
@@ -115,12 +128,31 @@ def elem(name: str, cls: str = "", attr: Dict[str, str] = {}, **attr_dic: str):
         attr_str += "".join(f' {k}="{v}"' for k, v in all_attr.items())
 
     def inner(*children: str):
+        """
+        生成したHTML要素の子要素を設定する内部関数。
+
+        Parameters:
+            *children (str): 子要素の内容。
+
+        Returns:
+            str: 完全なHTML要素を表す文字列。
+        """
         children_str = "".join(children)
         return f"<{name}{attr_str}>{children_str}</{name}>"
 
     return inner
 
 def txt(content: str, br: bool = True):
+    """
+    特殊文字をエスケープし、必要に応じて改行をHTMLの<br>または改行コードに変換する関数。
+
+    Parameters:
+        content (str): 変換するテキスト。
+        br (bool): Trueの場合は改行を<br>に、Falseの場合は改行を改行コードに変換します。
+
+    Returns:
+        str: 変換後のテキスト。
+    """    
     content = content.replace("<", "&lt;").replace(">", "&gt;")
     if br:
         content = content.replace("\n", "<br>")
@@ -133,6 +165,15 @@ span = functools.partial(elem, "span")
 blinking_cursor = span("tw-end-cursor")()
 
 def is_link_clickable(url: str) -> bool:
+    """
+    与えられたURLがクリック可能かどうかを確認する関数です。
+
+    Parameters:
+        url (str): 検証するURL。
+
+    Returns:
+        bool: URLがクリック可能ならTrue、そうでなければFalse。
+    """    
     if url:
         try:
             response = requests.get(url, timeout=5)
@@ -206,6 +247,7 @@ def format_attachment(
         span("tw-status-msg")(txt(cur_tatus + "...")),
     )
 
+    # エンドフラグが立っていない場合、更新中のステータス(circle_div)を表示
     if is_end:
         return atta_div, ""
     else:
@@ -214,6 +256,19 @@ def format_attachment(
 
 
 def format_message(message: str, is_end: bool) -> str:
+    """
+    与えられたメッセージをHTML形式にフォーマットします。
+    メッセージにコードブロックが含まれている場合、それを適切なHTML <pre> と <code> タグで囲み、
+    指定された言語に基づいてシンタックスハイライトが適用できるようにするためのものです。
+    コードブロックが終了する場所には、適切にタグを閉じ、さらには点滅カーソルを追加するオプションも含まれています。
+
+    Parameters:
+        message (str): フォーマットするメッセージ。
+        is_end (bool): メッセージが最終メッセージかどうか。
+
+    Returns:
+        str: HTML形式に変換されたメッセージ。
+    """    
     content = txt(message, br=False)
     begin_regex = re.compile(r"^```(\w*)$", re.MULTILINE)
     end_regex = re.compile(r"^```$", re.MULTILINE)
@@ -253,7 +308,7 @@ def format_message(message: str, is_end: bool) -> str:
 
 # ===================================================================
 
-# ステップの実行結果は必ず画面上に表示される仕様。多分リターンすると表示されるのかも。デコレーターの引数で表示を制御するフラグがあれば消すことはできそう → root=False で消える気がする
+# ステップの実行結果は必ず画面上に表示される仕様。多分リターンすると表示されるのかも。デコレーターの引数で表示を制御するフラグがあれば消すことはできそう → root=False で消える気がする → アップデートで root 引数は削除された
 @cl.step(name="Calling LLM")
 async def call_model(user_input: str):
 
@@ -322,8 +377,8 @@ async def action_result_display(action_result: str):
 # --------------------------------------------------
 # Stream the Output
 # --------------------------------------------------
-# root: ユーザーメッセージの下にステップをネストするかどうか
-@cl.step(name="【シンプルにストリーミングするだけ】Gemini-1.5-flash-exp-0827", type="llm", root=True)
+# root: ユーザーメッセージの下にステップをネストするかどうか → アップデートでこの引数は削除された
+@cl.step(name="【シンプルにストリーミングするだけ】Gemini-1.5-flash-exp-0827", type="llm")
 async def streaming_call_llm(user_input: str):
 
     # セッティング
@@ -382,8 +437,7 @@ html_content = """<div class="tw-atta">
 # make_async と langchain における コールバック
 # make_async は処理が終わったら表示が消えてしまう仕様。結果は見せずに、「今YYYを呼び出してXXXを処理しています」という見え方をさせるためだけの機能。
 # --------------------------------------------------
-# root: ユーザーメッセージの下にステップをネストするかどうか
-@cl.step(name="Planner Agent【make_asyncとコールバック】", type="llm", root=True)
+@cl.step(name="Planner Agent【make_asyncとコールバック/Gemini 1.5】", type="llm")
 async def call_makeAsync_and_callbacks(user_input: str):
 
     # セッティング
@@ -404,20 +458,20 @@ async def call_makeAsync_and_callbacks(user_input: str):
         async def on_llm_new_token(self, token: str, **kwargs) -> None:
             # トークンが生成される度にこの関数が呼び出される。TaskWeaver では handle_post メソッドが呼び出された
             print(f"ストリーミングハンドラーの呼び出し！ token = {token}")
-            await cl.Message(content="【ストリーミングハンドラー】の呼び出し！", author="Planner Agent【make_asyncとコールバック】").send()
+            await cl.Message(content="【ストリーミングハンドラー】の呼び出し！", author="Planner Agent【make_asyncとコールバック/Gemini 1.5】").send()
 
     # 別の種類も追加してみた
     class ChatStartHandler(BaseCallbackHandler):
         async def on_chat_model_start(self, serialized: Dict[str, Any], messages: List[List[BaseMessage]], **kwargs) -> None:
             print("チャットスタートモデルの呼び出し！")
-            await cl.Message(content="【チャットスタートモデル】の呼び出し！", author="Planner Agent【make_asyncとコールバック】").send()
+            await cl.Message(content="【チャットスタートモデル】の呼び出し！", author="Planner Agent【make_asyncとコールバック/Gemini 1.5】").send()
             elements = [
                 cl.Text(content=html_content, display="inline")
             ]
             await cl.Message(
                     content="【チャットスタートモデルと一緒に呼び出し】Check out this text element!",
                     elements=elements,
-                    author="Planner Agent【make_asyncとコールバック】",
+                    author="Planner Agent【make_asyncとコールバック/Gemini 1.5】",
                 ).send()
 
 
@@ -457,7 +511,7 @@ async def call_makeAsync_and_callbacks(user_input: str):
         # TaskWeaver は ここの chunk を HTML 化したものになっている気がする
         chunk = f'<font color="blue">{chunk}</font>'
         full_txt += chunk
-        await cur_step.stream_token(chunk)   # root=False にするとココが表示されなくなる
+        await cur_step.stream_token(chunk)   # root=False にするとココが表示されなくなる → アップデートでこの引数は削除された
 
     return full_txt
 

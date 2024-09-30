@@ -44,11 +44,7 @@ Page2 のサンプル実装はできたので、あとは動かしてみるだ�
 
 to do
 - GPTリサーチャーを組み込む
-- TaskWeaver を使わないなら 最新版の pip install chainlit==1.2.0 に変更しても問題ないか？ LangChain 周りも影響受けるような気はする。大丈夫なら、toml ファイルを削除して新しい toml ファイルの以下を変更する。
-  - # ココを true に変更しないと HTML がプレーンテキストとして解釈されてしまう
-    - unsafe_allow_html = true
-  - custom_css = "/public/style_v1.css"
-  - name = "チャットボット"
+
 
 
 ## done
@@ -74,6 +70,11 @@ to do
 - テストはした。実際には TaskWeaver のコードを流用してコンテンツを HTML 化したい
   - https://github.com/microsoft/TaskWeaver/blob/main/playground/UI/app.py
   - Evernote に書いたやつを組み込む。 input が LLM が考えた内容で Chainlit に入力するものになる。あとは、「タスクid 1」みたいなアウトプットを LLM が生成できれば良い。
+- TaskWeaver を使わないなら 最新版の pip install chainlit==1.2.0 に変更しても問題ないか？ LangChain 周りも影響受けるような気はする。大丈夫なら、toml ファイルを削除して新しい toml ファイルの以下を変更する。
+  - # ココを true に変更しないと HTML がプレーンテキストとして解釈されてしまう
+    - unsafe_allow_html = true
+  - custom_css = "/public/style_v1.css"
+  - name = "チャットボット"
 
 
 
@@ -166,6 +167,16 @@ AuthApiError: Invalid Refresh Token: Refresh Token Not Found
 - backend/entrypoint.sh
   - uvicorn と chainlit を起動させる用
 
+## ブランチ情報
+- development1
+  - FastAPI と Chainlit(Supabaseの認証あり) が完成
+  -  Chainlit の CSS は適用前
+- development2
+  - 一通り完成。Chainlit に CSS や make_async 、ストリーミング出力、コールバックなど追加
+  - Chainlit が 1.0.506 Ver になっているため、UI も昔のまま。こっちの UI が良い場合はこのブランチを使う
+- development3
+  - Chainlit の最新版を適用したため、UI が少し変わった。root がないVer。こっちの UI が良い場合はこのブランチを使う
+  - LangChain と langgraph も 2024/09/30 時点で最新版のものを適用した。依存関係もクリーン
 
 
 
