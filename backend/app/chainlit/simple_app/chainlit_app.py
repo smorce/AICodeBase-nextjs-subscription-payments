@@ -32,7 +32,7 @@ import jwt
 from supabase import create_client, Client
 
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
-# os.chdir(os.path.dirname(__file__))
+# os.chdir(os.path.dirname(__file__))    # これを入れていたせいで chainlit run の -w の引数がおかしくなっていた
 
 # 現在のディレクトリ
 CURRENT_DIR = os.getcwd()
