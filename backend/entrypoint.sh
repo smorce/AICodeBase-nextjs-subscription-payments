@@ -31,4 +31,8 @@ mv "$TMP_FILE" .env
 source /app/.env
 
 # chainlitをフォアグラウンドで実行（このタイミングで実行したあとに場所をCOPYで移動させているため、-w でリロードするとおかしくなる）
-exec chainlit run app/chainlit/chainlit_app.py -w --host 0.0.0.0 --port 8491
+# chainlit_app.py をバックグラウンドで実行して、chainlit アプリケーションを2つ動かす
+exec chainlit run app/chainlit/chainlit_app.py -w --host 0.0.0.0 --port 8491 & \
+chainlit run app/chainlit/langgraph/chainlit_langgraph.py -w --host 0.0.0.0 --port 8492
+
+

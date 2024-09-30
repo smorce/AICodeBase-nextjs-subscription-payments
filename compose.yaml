@@ -11,6 +11,7 @@ services:
     ports:
       - "6302:6302"
       - "8491:8491"
+      - "8492:8492"
     volumes:
       - ./backend:/app
     env_file:

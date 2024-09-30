@@ -99,6 +99,9 @@ aicodebasse-frontend-container         | +schemas = ["public", "graphql_public"]
   - "F4H0/$Ev_7d*Qzf,%2xv_0Av" のような文字列になっているときに Ev_7d の前に エスケープ文字が入っているからかも
   - どっちにしても新しい値で上書きされるので気にしないで OK
 - ちゃんとWebアプリケーションからサインアウトしない状態で、再度Webアプリケーションを立ち上げて chainlit のページに行こうとするとJWTの有効期限エラーが出る
+- ワーニングメッセージ: Key 'title' is not supported in schema, ignoring
+  - https://github.com/langchain-ai/langchain-google/issues/463
+  - これは LangGraph のバグらしい。Gemini を使うと出る。問題があるわけではないので一旦保留。DuckDuckGoSearchResults のエラー？？
 
 
 

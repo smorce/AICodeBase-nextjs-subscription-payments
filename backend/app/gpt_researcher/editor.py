@@ -9,6 +9,7 @@ import re
 
 import sys
 import os
+
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
 os.chdir(os.path.dirname(__file__))
 

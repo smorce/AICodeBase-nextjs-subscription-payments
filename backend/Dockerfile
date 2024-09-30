@@ -8,8 +8,8 @@ ARG GID=1002
 RUN addgroup --gid $GID appgroup && \
     adduser --disabled-password --gecos "" --uid $UID --gid $GID appuser
 
-# システムパッケージを更新し、bash と NTPsec をインストール
-RUN apt-get update && apt-get install -y bash ntpsec && rm -rf /var/lib/apt/lists/*
+# システムパッケージを更新し、bash をインストール
+RUN apt-get update && apt-get install -y bash && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
