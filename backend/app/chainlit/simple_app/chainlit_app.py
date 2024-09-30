@@ -32,13 +32,13 @@ import jwt
 from supabase import create_client, Client
 
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
-os.chdir(os.path.dirname(__file__))
+# os.chdir(os.path.dirname(__file__))
 
 # 現在のディレクトリ
 CURRENT_DIR = os.getcwd()
 
 # .envファイルへのパスを構築
-env_path = os.path.join(CURRENT_DIR, '..', '..', '.env')
+env_path = os.path.join(CURRENT_DIR, '.env')
 
 # .envファイルが存在するか確認
 if os.path.exists(env_path):

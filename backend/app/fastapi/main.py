@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 
 # ★適切ではないが、このファイルで完結できるようにするために、ファイル分割はしていない
-# ★Docker を使った Next.js と FastAPI のシンプルな連携を確認する目的なのでユーザー認証は入れていない
+# ★Docker を使った Next.js と FastAPI のシンプルな連携を確認する目的なので、FastAPI のユーザー認証は入れていない
 
 
 # データベースの設定（SQLiteを使用）。バックエンドフォルダに作成される

@@ -44,7 +44,11 @@ def list_files(directory):
 @app.get("/", response_class=HTMLResponse)
 async def index():
     # 現在のスクリプトのディレクトリを取得（デバッグ中）
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    os.chdir(os.path.dirname(__file__))
+    # 現在のディレクトリ
+    script_dir = os.getcwd()
     print("デバッグ。ファイルサーバー")
     print(script_dir)   # app にいる
 
@@ -106,5 +110,5 @@ async def download_file(filepath: str):
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("FILE_SERVER_PORT", 8080))
+    port = int(os.environ.get("FILE_SERVER_PORT", 8590))
     uvicorn.run(app, host="0.0.0.0", port=port)

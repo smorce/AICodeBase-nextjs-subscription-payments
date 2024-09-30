@@ -37,9 +37,7 @@ pip install PyJWT
 Dockerコマンドは入っていたので、ビルドはできそう。
 Page2 のサンプル実装はできたので、あとは動かしてみるだけ。ユーザー登録とアイテム登録ができ、フロントエンドはNext.js、バックエンドはFastAPI、DBはSQLite。
 
-!pip install chainlit==1.0.506 langchain==0.1.16 langchain-openai==0.1.4 langchain-community==0.0.34 duckduckgo-search==5.3.0 wikipedia==1.4.0 -q
-!pip install -qU langchain-google-genai
-!pip install nest-asyncio pyngrok -q
+
 
 
 to do
@@ -75,6 +73,8 @@ to do
     - unsafe_allow_html = true
   - custom_css = "/public/style_v1.css"
   - name = "チャットボット"
+- LangGraph で StaticFiles directory 'public' does not exist. というエラーが出ているが困ってはいないので一旦無視。config.toml ファイルは1つしかないから 対応がめんどくさいかも。
+
 
 
 ## LangGraph
@@ -87,7 +87,7 @@ to do
 
 
 ## pending
-- LangGraph で StaticFiles directory 'public' does not exist. というエラーが出ているが困ってはいないので一旦無視。config.toml ファイルは1つしかないから 対応がめんどくさいかも。
+- なし
 
 
 

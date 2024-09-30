@@ -17,6 +17,7 @@ from services.tools.ddg_search import ddg_search
 # メモ
 # -----------------------------------------------------
 # 以下は Chainlit で定義されているイベントタイプ。詳細は公式ドキュメントを参照
+# https://zenn.dev/umi_mori/books/prompt-engineer/viewer/langchain_callbacks
 ## on_chat_model_stream
 ## on_tool_start
 ## on_tool_end

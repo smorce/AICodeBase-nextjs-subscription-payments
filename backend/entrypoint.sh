@@ -2,7 +2,7 @@
 set -e  # エラーが発生したら即座に終了
 
 # uvicornをバックグラウンドで実行
-uvicorn app.main:app --host 0.0.0.0 --port 6302 &
+uvicorn app.fastapi.main:app --host 0.0.0.0 --port 6302 &
 
 # Chainlit で認証機能を使うには以下のコマンドを実行し.envファイルに書き込む必要あり
 # chainlit create-secret コマンドを実行し、CHAINLIT_AUTH_SECRET を取得
@@ -32,7 +32,5 @@ source /app/.env
 
 # chainlitをフォアグラウンドで実行（このタイミングで実行したあとに場所をCOPYで移動させているため、-w でリロードするとおかしくなる）
 # chainlit_app.py をバックグラウンドで実行して、chainlit アプリケーションを2つ動かす
-exec chainlit run app/chainlit/chainlit_app.py -w --host 0.0.0.0 --port 8491 & \
+exec chainlit run app/chainlit/simple_app/chainlit_app.py -w --host 0.0.0.0 --port 8491 & \
 chainlit run app/chainlit/langgraph/chainlit_langgraph.py -w --host 0.0.0.0 --port 8492
-
-
