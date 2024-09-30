@@ -21,9 +21,10 @@ def encode_image(image_path):
 async def vision(prompt: str, image_paths: Sequence[str]) -> str:
     """Pass multiple images to a multimodal AI to get a description of the images."""
 
+    # 不適切な画像を入力すると生成が途中で止まる
     model = ChatGoogleGenerativeAI(model="gemini-1.5-pro-002",
                                     temperature=1,
-                                    streaming=True)    # ココを False にすると続きが生成されない？ もしくは不適切な画像を入力すると生成が止まる。
+                                    streaming=False)   # 現状の実装では、ここは False でも True でも同じ挙動になる。ストリーミングの実装にはなっていないので False にしておく
 
     content = [{"type": "text", "text": prompt}]
 
@@ -49,7 +50,9 @@ async def vision(prompt: str, image_paths: Sequence[str]) -> str:
     # 0msys さんの実装だとストリーミングにはならない。最終的な表示はストリーミングっぽく見えけど、Vision モデルの結果はストリーミングでは返ってこない
     response = chain.invoke(message)
 
-
+    
+    # チャンクでリターンするのではなく、レスポンスが完成してからリターンしているので、ストリーミングではない
+    # 特に問題はないのでこれは仕様と割り切っても良さそう
     return response
 
 

@@ -77,6 +77,10 @@ to do
   - name = "チャットボット"
 
 
+## pending
+- LangGraph で StaticFiles directory 'public' does not exist. というエラーが出ているが困ってはいないので一旦無視。config.toml ファイルは1つしかないから 対応がめんどくさいかも。
+
+
 
 
 ## 注意事項
