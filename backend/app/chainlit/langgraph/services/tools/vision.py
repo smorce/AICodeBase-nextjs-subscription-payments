@@ -23,7 +23,7 @@ async def vision(prompt: str, image_paths: Sequence[str]) -> str:
 
     model = ChatGoogleGenerativeAI(model="gemini-1.5-pro-002",
                                     temperature=1,
-                                    streaming=True)    # ココを False にすると続きが生成されない
+                                    streaming=True)    # ココを False にすると続きが生成されない？ もしくは不適切な画像を入力すると生成が止まる。
 
     content = [{"type": "text", "text": prompt}]
 
@@ -46,6 +46,7 @@ async def vision(prompt: str, image_paths: Sequence[str]) -> str:
     chain = model | output_parser
 
 
+    # 0msys さんの実装だとストリーミングにはならない。最終的な表示はストリーミングっぽく見えけど、Vision モデルの結果はストリーミングでは返ってこない
     response = chain.invoke(message)
 
 

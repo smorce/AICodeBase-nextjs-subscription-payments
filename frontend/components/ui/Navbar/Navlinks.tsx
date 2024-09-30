@@ -39,6 +39,9 @@ export default function Navlinks({ user }: NavlinksProps) {
               <Link href="/chainlit" className={s.link}>
                 Chainlit
               </Link>
+              <Link href="/langgraph" className={s.link}>
+                LangGraph
+              </Link>
               <Link href="/account" className={s.link}>
                 Account
               </Link>

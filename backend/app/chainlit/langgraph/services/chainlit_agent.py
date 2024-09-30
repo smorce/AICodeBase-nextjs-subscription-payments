@@ -114,7 +114,7 @@ class ChainlitAgent(SingleAgent):
             #     text=res.content, use_manuscript=True, file_name="読み上げ"
             # )
 
-            # ダミーのファイルパス
+            # ダミーのファイルパス（毎回 セッションid が発行されるので、とりあえずファイルパスはベタ書きで）
             file_path = "./.files/ダミー.wav"
             elements = [
                 cl.Audio(
