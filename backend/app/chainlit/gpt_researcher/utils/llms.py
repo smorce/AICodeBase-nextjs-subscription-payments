@@ -1,17 +1,19 @@
 from langchain.adapters.openai import convert_openai_messages
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
 
 import os
 from typing import Optional
 # pip install pyyaml
-import yaml
+# import yaml
 
 # 現在のスクリプトのディレクトリを取得
-current_dir = os.path.dirname(os.path.abspath(__file__))
+# current_dir = os.getcwd()
 
 # 一つ上のディレクトリにあるweb_search_config.yamlのパスを作成
-config_path = os.path.join(current_dir, '..', 'web_search_config.yaml')
+# config_path = os.path.join(current_dir, '..', 'web_search_config.yaml')
 
 # YAMLファイルを読み込む（使っていないが残しておく）
 # with open(config_path, 'r') as file:
@@ -59,17 +61,20 @@ def call_model(prompt: list, model: str, max_retries: int = 2, response_format: 
     # model: "openai/gpt-3.5-turbo-0125"  # 16k
     # model: "google/gemini-flash-1.5"    # 本家APIじゃないので有料だけど一旦これで。ただし、ChatGoogleGenerativeAI を使えば本家APIを使える。
     # model: "anthropic/claude-3-haiku"
-    llm = ChatOpenRouter(model_name=model, max_retries=max_retries, model_kwargs=model_kwargs)
+    # llm = ChatOpenRouter(model_name=model, max_retries=max_retries, model_kwargs=model_kwargs)
+    llm = ChatGoogleGenerativeAI(model=model, max_retries=max_retries, model_kwargs=model_kwargs)
+
+    system_prompt = "あなたはとても賢いAIアシスタントです。"
+    message = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=lc_messages)
+        ]
 
     # 「StrOutputParser」は、文字列として出力するパーサーです。
     parser = StrOutputParser()
 
     chain = llm | parser
-    response = chain.invoke(lc_messages)
+
+    response = chain.invoke(message)
 
     return response
-
-
-
-
-

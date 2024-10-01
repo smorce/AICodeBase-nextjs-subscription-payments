@@ -55,7 +55,7 @@ async def write_md_to_pdf(text: str, path: str) -> str:
 
 
     # 現在のスクリプトのディレクトリを取得
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_dir = os.getcwd()
     # pdf_styles.css のパスを生成
     pdf_styles_path = os.path.join(script_dir, 'pdf_styles.css')
 
@@ -163,6 +163,7 @@ async def write_md_to_ppt(text: str, path: str) -> str:
 
         # ------------------------------------------
         # マウントしたローカルディレクトリにコピーする
+        ★ココを修正
         # ------------------------------------------
         import shutil
         import glob

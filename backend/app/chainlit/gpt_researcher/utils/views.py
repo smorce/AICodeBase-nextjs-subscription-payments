@@ -2,13 +2,13 @@ from colorama import Fore, Style
 from enum import Enum
 
 class AgentColor(Enum):
-    RESEARCHER = Fore.LIGHTBLUE_EX
-    EDITOR = Fore.YELLOW
-    WRITER = Fore.LIGHTGREEN_EX
-    PUBLISHER = Fore.MAGENTA
-    REVIEWER = Fore.CYAN
-    REVISOR = Fore.LIGHTWHITE_EX
-    MASTER = Fore.LIGHTYELLOW_EX
+    RESEARCHER         = Fore.LIGHTBLUE_EX
+    EDITOR             = Fore.YELLOW
+    WRITER             = Fore.LIGHTGREEN_EX
+    PUBLISHER          = Fore.MAGENTA
+    REVIEWER           = Fore.CYAN
+    REVISOR            = Fore.LIGHTWHITE_EX
+    MASTER             = Fore.LIGHTYELLOW_EX
     POWERPOINTDESIGNER = Fore.LIGHTRED_EX  # 新しい色を追加
 
 def print_agent_output(output:str, agent: str="RESEARCHER"):

@@ -1,7 +1,7 @@
 from datetime import datetime
-from .utils.views import print_agent_output
-from .utils.llms import call_model
-# from .memory.attachment import AttachmentType
+from utils.views import print_agent_output
+from utils.llms import call_model
+from memory.attachment import AttachmentType
 from langgraph.graph import StateGraph, END
 import asyncio
 import json
@@ -19,11 +19,11 @@ CURRENT_DIR = os.getcwd()
 # パスの追加
 sys.path.append(CURRENT_DIR)
 
-from .memory.draft import DraftState
+from memory.draft import DraftState
 try:
-    from .researcher import ResearchAgent
-    from .reviewer import ReviewerAgent
-    from .reviser import ReviserAgent
+    from researcher import ResearchAgent
+    from reviewer import ReviewerAgent
+    from reviser import ReviserAgent
 except ImportError as e:
     print(f"editor.pyのエラー: Failed to import: {e}")
     # 代替処理やエラーハンドリングをここに追加
@@ -39,12 +39,11 @@ class EditorAgent:
         :param summary_report:
         :return:
         :param total_sub_headers:
-        :return:
         """
 
         initial_research = research_state.get("initial_research")
         post_proxy       = research_state.get("post_proxy")          # 追加
-        max_sections = self.task.get("max_sections")
+        max_sections     = self.task.get("max_sections")
         # 追加
         post_proxy.update_attachment(
             message=f"EditorAgent: 初期調査に基づいてレポートの概要と構成を計画中…\n",
@@ -106,7 +105,7 @@ class EditorAgent:
         # --------------------------------------------
         research_agent = ResearchAgent()
         reviewer_agent = ReviewerAgent()
-        reviser_agent = ReviserAgent()
+        reviser_agent  = ReviserAgent()
         # --------------------------------------------
         queries = research_state.get("sections")   # サブトピック(アウトライントピック)のリスト。ちゃんと3つになっていた
         title = research_state.get("title")
