@@ -12,6 +12,7 @@ services:
       - "6302:6302"
       - "8491:8491"
       - "8492:8492"
+      - "8493:8493"
     volumes:
       - ./backend:/app
     env_file:

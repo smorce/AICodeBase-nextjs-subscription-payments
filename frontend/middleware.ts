@@ -66,11 +66,17 @@ export async function middleware(request: NextRequest) {
         const redirectUrl = new URL('http://127.0.0.1:8492/');
         return NextResponse.redirect(redirectUrl);
     }
-    
+
+    // 認証されている場合、/callbacks へのアクセスを http://127.0.0.1:8493/ にリダイレクト
+    if (user && request.nextUrl.pathname.startsWith('/callbacks')) {
+        const redirectUrl = new URL('http://127.0.0.1:8493/');
+        return NextResponse.redirect(redirectUrl);
+    }
+
     return response;
 }
 
-// matcher 設定により、/chainlit, /langgraph 以下の全てのパスに対してミドルウェアが適用されます
+// matcher 設定により、/chainlit, /langgraph, /callbacks 以下の全てのパスに対してミドルウェアが適用されます
 export const config = {
-    matcher: ['/chainlit/:path*', '/langgraph/:path*'],
+    matcher: ['/chainlit/:path*', '/langgraph/:path*', '/callbacks/:path*'],
 };

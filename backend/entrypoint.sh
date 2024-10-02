@@ -30,6 +30,7 @@ mv "$TMP_FILE" .env
 # source コマンドを実行するには bash が必要なので sh から変更した
 source /app/.env
 
-# simple_app をバックグラウンドで実行して、chainlit アプリケーションを2つ動かす
+# chainlit アプリケーションを動かす
 exec chainlit run app/chainlit/simple_app/chainlit_app.py -w --host 0.0.0.0 --port 8491 & \
-chainlit run app/chainlit/langgraph/chainlit_langgraph.py -w --host 0.0.0.0 --port 8492
+chainlit run app/chainlit/langgraph/chainlit_langgraph.py -w --host 0.0.0.0 --port 8492 & \
+chainlit run app/chainlit/callbacks/chainlit_callbacks.py -w --host 0.0.0.0 --port 8493

@@ -519,6 +519,96 @@ async def call_makeAsync_and_callbacks(user_input: str):
 
 
 
+@cl.step(name="Planner Agent【make_asyncとカスタムコールバック/Gemini 1.5】", type="llm")
+async def run_chain(user_input: str):
+
+    # セッティング
+    cur_step = cl.context.current_step
+    cur_step.input = user_input
+    full_txt = ""
+
+    # ---------------------------------------------------
+    # イベントハンドラー
+    # ---------------------------------------------------
+
+    from uuid import UUID
+    import uuid
+
+    class CustomEventHandler(BaseCallbackHandler):
+        def on_custom_event(
+            self,
+            name: str,
+            data: any,
+            *,
+            run_id: UUID,
+            tags: list[str] | None = None,
+            metadata: dict[str, any] | None = None,
+            **kwargs: any
+        ) -> any:
+            """
+            カスタムイベントを処理するハンドラー。
+
+            Parameters:
+                name (str): カスタムイベントの名前。
+                data (Any): カスタムイベントのデータ。
+                run_id (UUID): 実行のID。
+                tags (list[str] | None): カスタムイベントに関連付けられたタグ。
+                metadata (dict[str, Any] | None): カスタムイベントに関連付けられたメタデータ。
+                **kwargs (Any): その他の追加パラメータ。
+
+            Returns:
+                Any: 必要に応じて任意の値を返すことができます。
+            """
+            # イベント情報をログに出力
+            print(f"カスタムイベント受信: {name}")
+            print(f"データ: {data}")
+            print(f"Run ID: {run_id}")
+            if tags:
+                print(f"タグ: {', '.join(tags)}")
+            if metadata:
+                print(f"メタデータ: {metadata}")
+            
+            # 必要に応じて追加の処理をここに記述
+            # 例: データベースに情報を保存、他のサービスと連携など
+
+            # 処理結果を返す場合
+            return {"status": "イベントを正常に処理しました"}
+
+            
+    # ---------------------------------------------------
+
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessage(content=system_prompt),
+            HumanMessagePromptTemplate.from_template("{user_input}"),
+        ]
+    )
+    model = ChatGoogleGenerativeAI(model="gemini-1.5-flash-exp-0827",
+                                    temperature=1,
+                                    streaming=True,
+                                    )
+
+    output_parser = StrOutputParser()
+
+    chain = prompt | model | output_parser
+
+    config = RunnableConfig({'callbacks': [CustomEventHandler()]})
+
+
+    async for chunk in await cl.make_async(chain.astream)(
+            {"user_input": user_input},
+            config=config,                 # ここで LangChain のコールバックを指定する
+        ):
+        # ステップの出力をストリームする
+        # TaskWeaver は ここの chunk を HTML 化したものになっている気がする
+        chunk = f'<font color="blue">{chunk}</font>'
+        full_txt += chunk
+        await cur_step.stream_token(chunk)   # root=False にするとココが表示されなくなる → アップデートでこの引数は削除された
+
+    return full_txt
+
+
 # ===================================================================
 # 【ヘッダーによる認証・認可】
 
