@@ -1,8 +1,7 @@
 import os
-from .utils.views import print_agent_output
-from taskweaver.module.event_emitter import PostEventProxy
-from taskweaver.memory.attachment import AttachmentType
-from .utils.file_formats import write_md_to_ppt
+from utils.views import print_agent_output
+from taskweaver.module.event_emitter import PostEventProxy　　★このクラスはファイル化する
+from utils.file_formats import write_md_to_ppt
 
 class PowerPointDesignerAgent:
     def __init__(self, output_dir: str):
@@ -44,9 +43,8 @@ class PowerPointDesignerAgent:
 
     async def run(self, post_proxy: PostEventProxy):
         print_agent_output(f"パワーポイントを作成中...", agent="POWERPOINTDESIGNER")
-        post_proxy.update_attachment(
-            message=f"PowerPointDesignerAgent: パワーポイントを作成中…\n",
-            type=AttachmentType.web_search_text,
+        post_proxy.progress(
+            message=f"PowerPointDesignerAgent: パワーポイントを作成中…\n"
         )
 
         # mdファイルを開いて内容を読み込む

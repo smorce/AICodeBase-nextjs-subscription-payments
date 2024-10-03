@@ -1,6 +1,8 @@
 from gpt_researcher.master.agent import GPTResearcher
 from colorama import Fore, Style
 from .utils.views import print_agent_output
+# from taskweaver.module.event_emitter import PostEventProxy    # 必要ない気がする
+from taskweaver.memory.attachment import AttachmentType
 
 
 class ResearchAgent:
@@ -32,9 +34,10 @@ class ResearchAgent:
         query      = task.get("query")
         post_proxy = research_state.get("post_proxy")    # ★ post_proxy も受け取るようにした
         print_agent_output(f"Running initial research on the following query: {query}", agent="RESEARCHER")
-        # 追加
-        post_proxy.progress(
-            message=f"ResearchAgent: 初期計画を立案中…\n"
+        # 追加[ update_attachment に修正]
+        post_proxy.update_attachment(
+            message=f"ResearchAgent: 初期計画を立案中…\n",
+            type=AttachmentType.web_search_text,
         )
         return {"task": task, "initial_research": await self.research(query=query, verbose=task.get("verbose")), "post_proxy": post_proxy}
 

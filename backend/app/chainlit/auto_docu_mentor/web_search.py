@@ -6,23 +6,12 @@
 # つまり、Webリサーチャーロール = マスターエージェント
 
 
-# とりあえず完成したので、あとは Tavily のAPIキーを用意して TaskWeaver を GitHub にあげて、ローカルで動かしてみる
-# → Tavily のAPIキー は用意したので、GitHub にアップする
-# クイックスタート：https://github.com/microsoft/TaskWeaver
-# Web UI 起動方法
-# pip install -U chainlit
-# cd playground/UI/
-# chainlit run app.py
-
-
-
 # API キーの入力はmainで実行するときに以下のように入力すればOK
 # import os
 # os.environ["OPENAI_API_KEY"] = "～～～"
 # os.environ["GEMINI_API_KEY"] = "～～～"    # GEMINI_API_KEY でOK
 # os.environ["TAVILY_API_KEY"] = "～～～"    # Free のキーを入手した
 # os.environ["LANGCHAIN_API_KEY"] = "～～～"
-
 
 
 import asyncio
@@ -137,9 +126,9 @@ class WebSearch(Role):
             with open(task_json_path, 'r') as f:
                 task = json.load(f)
 
-            task["query"] = self.query
+            task["query"] = self.query    # ★ここは Chainlit の user_input にする
             self.task_id = int(time.time()) # Currently time based, but can be any unique identifier
-            self.output_dir = f"./outputs/run_{self.task_id}_{task.get('query')[0:40]}"
+            self.output_dir = f"./outputs/run_{self.task_id}_{task.get('query')[0:40]}"   # ★ Chainlit の .files  に変更する
             self.task = task
             os.makedirs(self.output_dir, exist_ok=True)
 
@@ -177,8 +166,8 @@ class WebSearch(Role):
         except Exception as e:
             raise Exception(f"Failed to initialize the plugin due to: {e}")
 
-    def reply(self, memory: Memory, **kwargs) -> Post:           # [2024/06/23] マルチエージェントは順番に実行して結果を繋げていく設計なので、 reply メソッドは同期関数でないといけない
-        from .utils.views import print_agent_output
+    def reply(self, memory: Memory, **kwargs) -> Post:           # ★ reply メソッド の中身を with self.event_emitter.handle_events_ctx(event_handler): の中に記述する
+        from utils.views import print_agent_output
         rounds = memory.get_role_rounds(
             role=self.alias,
             include_failure_rounds=False,

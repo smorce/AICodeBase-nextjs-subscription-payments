@@ -15,33 +15,19 @@
 - Page2 + FastAPI
   - トークンの有効期限 (expires_delta) を適切に設定し、必要に応じてリフレッシュトークンの実装を検討する
     - リフレッシュトークンまでは実装していないので 優先度の低い to do としてメモしておく
-- GPTリサーチャーを組み込む
-- カスタムコールバックハンドラーは AsyncCallbackHandler が正しい？？
+- カスタムコールバックハンドラーは AsyncCallbackHandler が正しい？？ 一応 ちゃんと動いている
   - https://python.langchain.com/docs/how_to/callbacks_async/
 
 
 
 
 ## doing
-
-- chainlit の使い方(現状は Colab をバックエンドにしている)
-先に chainlit を Colab で動かすこと。
-https://colab.research.google.com/drive/1uGcgP0_RxOE9Vxjcc-1MprwcLeGP9Gm6?usp=sharing
-
-そのあと、ミドルウェアの URL を上書きする。
-NextResponse.redirect('https://d206-34-173-37-132.ngrok-free.app/');
-
-
-★Chainlit を Webアプリケーションに組み込むところはできたので、Chainlit の認証をシームレスにできるように対応中。
-- Webアプリケーションでログインした後にヘッダーから Chainlit に飛ぶと、また Chainlit の方でログインしないといけない。ここをうまいことアクセストークンを渡すなりして、シームレスにログインできるようにしたい。
-→やった。ヘッダー認証に変更したので、SUPABASE_JWT_SECRET を SupabaseプロジェクトのJWTシークレットキーとして取得した。
-あと、バックエンドとフロントエンドをわけたあと、
-pip install PyJWT
-して、ローカルで Chainlit.py 起動できるようにする。
-→バックエンドと分離したので、Pythonで Chainlit.py をローカル起動できるようにする。
-Dockerコマンドは入っていたので、ビルドはできそう。
-Page2 のサンプル実装はできたので、あとは動かしてみるだけ。ユーザー登録とアイテム登録ができ、フロントエンドはNext.js、バックエンドはFastAPI、DBはSQLite。
-
+- GPTリサーチャーを組み込む
+  - PowerPointDesignerAgent
+    - 最新のマークダウンファイルをパワポ化しているが、複数のユーザーが同時にサービスを使う場合おかしくなるので、ResearchState に対象のファイル名を記録しておく
+  - utils/llms.py
+    - Gemini は JSON モードをサポートしていないので、おかしければ元に戻す
+  - モジュールのインポートパスは大丈夫か？
 
 
 
@@ -79,8 +65,6 @@ Page2 のサンプル実装はできたので、あとは動かしてみるだ�
 - callbacks ページの追加
   - LangChain のコールバックを使わずに Python の標準機能でコールバックとイベントハンドラーを実装
   - テストするときは isOverrideChildStreamingToken だけ変更すればOK
-
-
 
 
 
@@ -203,9 +187,18 @@ AuthApiError: Invalid Refresh Token: Refresh Token Not Found
 - development3
   - Chainlit の最新版を適用したため、UI が少し変わった。root がないVer。こっちの UI が良い場合はこのブランチを使う
   - LangChain と langgraph も 2024/09/30 時点で最新版のものを適用した。依存関係もクリーン
+  - langgraph + Chainlit の実装
+  - LangChain のコールバックを使わずに Python の標準機能でコールバックとイベントハンドラーを実装
 
 
 
+## 勉強メモ
+- https://qiita.com/Tadataka_Takahashi/items/ae277af53e7f00394cd0
+  - contextlib.contextmanager の使い方
+    - contextlib.contextmanager デコレータを使うと、ジェネレータ関数を使ってカスタムコンテキストマネージャを簡単に作成できます。
+- Chainlit の仕様
+  - stream_token() は作成された箱に対して、上書きもしくは続きを連結して出力する仕様なので、.send() しないと確定せず、ずっとその箱を使うことになる。
+  
 
 
 

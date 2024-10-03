@@ -15,6 +15,21 @@ LangChain のコールバックを使わずに Python の標準機能でコー�
 # True:  上書きする
 # False: 上書きせずに続きにストリーミングトークンを生成する
 isOverrideChildStreamingToken = False
+
+# もし上書きするか続きを生成するか細かく制御したい場合は
+# post_proxy.is_sequence = True
+# post_proxy.is_sequence = False
+# のように post_proxy.progress("aaa") する直前に is_sequence の値を上書きすれば良い。上書きしたら元に戻す。
+# ↓
+# この実装を contextmanager を使って実装した。 override_sequence_temporarily メソッドの部分。
+# 使い方
+# 一時的に is_sequence の値を変更したい場合は
+# ---
+# with post_proxy.override_sequence_temporarily(True):
+#     post_proxy.progress("Sequence progress 1")
+#     post_proxy.progress("Sequence progress 2")
+# ---
+# のように使う。 with 文で書くことでリソースが自動的に開放され is_sequence の値が元に戻る。
 # ----------------------------------------------
 
 
@@ -71,7 +86,6 @@ class SessionEventEmitter:
         )
 
 
-
     @contextmanager
     def handle_events_ctx(self, handler: Optional[SessionEventHandler] = None):
         """
@@ -126,9 +140,9 @@ class PostEventProxy:
         self.is_sequence = is_sequence
         self.message_is_end = False
         # 初期化時にstartイベントを発行
-        self.create(f"{self.role_name} の処理を開始します。")
+        self.start(f"{self.role_name} の処理を開始します。")
 
-    def create(self, message: str):
+    def start(self, message: str):
         """
         startイベントを発行します。
 
@@ -144,9 +158,9 @@ class PostEventProxy:
 
     def progress(self, message: str):
         """
-        ステータス更新イベントを発行します。
+        進捗更新イベントを発行します。
 
-        :param status: ステータスメッセージ
+        :param message: 進捗メッセージ
         """
         progress_event = {
             'type': 'progress',
@@ -187,7 +201,7 @@ class PostEventProxy:
         }
         self.emitter.emit(update_message_event)
 
-    # update_attachment は不要。代わりに update_message を使う。
+    # update_attachment は不要
     # def update_attachment(
     #     self,
     #     message: str,
@@ -253,6 +267,17 @@ class PostEventProxy:
             'is_sequence': self.is_sequence,
         }
         self.emitter.emit(end_event)
+
+
+    @contextmanager
+    def override_sequence_temporarily(self, value: bool):
+        """一時的に is_sequence の値を変更するメソッド"""
+        original_value = self.is_sequence
+        self.is_sequence = value
+        try:
+            yield
+        finally:
+            self.is_sequence = original_value
 
 
 

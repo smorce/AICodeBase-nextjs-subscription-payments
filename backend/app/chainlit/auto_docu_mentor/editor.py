@@ -1,7 +1,6 @@
 from datetime import datetime
 from utils.views import print_agent_output
 from utils.llms import call_model
-from memory.attachment import AttachmentType
 from langgraph.graph import StateGraph, END
 import asyncio
 import json
@@ -45,13 +44,11 @@ class EditorAgent:
         post_proxy       = research_state.get("post_proxy")          # 追加
         max_sections     = self.task.get("max_sections")
         # 追加
-        post_proxy.update_attachment(
-            message=f"EditorAgent: 初期調査に基づいてレポートの概要と構成を計画中…\n",
-            type=AttachmentType.web_search_text,
+        post_proxy.progress(
+            message=f"EditorAgent: 初期調査に基づいてレポートの概要と構成を計画中…\n"
         )
-        post_proxy.update_attachment(
-            message=f"初期調査を表示してみる: {initial_research}",
-            type=AttachmentType.web_search_text,
+        post_proxy.progress(
+            message=f"初期調査を表示してみる: {initial_research}"
         )
 
         prompt = [{
@@ -74,7 +71,7 @@ class EditorAgent:
 
         print_agent_output(f"Planning an outline layout based on initial research...", agent="EDITOR")
         response = call_model(prompt=prompt, model=self.task.get("model"), response_format="json")
-        print("デバッグ。JSON形式か？？  response")
+        print("デバッグ。JSON形式か？ Gemini は JSON モードをサポートしていないので、ココがあやしい。response ↓")
         print(response)
 
         # 正規表現を使って{}の中身を抽出する
@@ -107,21 +104,18 @@ class EditorAgent:
         reviewer_agent = ReviewerAgent()
         reviser_agent  = ReviserAgent()
         # --------------------------------------------
-        queries = research_state.get("sections")   # サブトピック(アウトライントピック)のリスト。ちゃんと3つになっていた
+        queries = research_state.get("sections")           # サブトピック(アウトライントピック)のリスト。ちゃんと3つになっていた
         title = research_state.get("title")
-        post_proxy = research_state.get("post_proxy")          # 追加
+        post_proxy = research_state.get("post_proxy")      # 追加
         # 追加
-        post_proxy.update_attachment(
-            message=f"EditorAgent: 各アウトライントピックについて並行してリサーチ中…\n",
-            type=AttachmentType.web_search_text,
+        post_proxy.progress(
+            message=f"EditorAgent: 各アウトライントピックについて並行してリサーチ中…\n"
         )
-        post_proxy.update_attachment(
-            message=f"サブトピック(アウトライントピック)のリストを出してみる。これがおかしい気がする: {queries}",
-            type=AttachmentType.web_search_text,
+        post_proxy.progress(
+            message=f"サブトピック(アウトライントピック)のリストを出してみる。これがおかしい気がする: {queries}"
         )
-        post_proxy.update_attachment(
-            message=f"これは初期計画及びレポートのタイトル: {title}",
-            type=AttachmentType.web_search_text,
+        post_proxy.progress(
+            message=f"これは初期計画及びレポートのタイトル: {title}"
         )
 
         workflow = StateGraph(DraftState)

@@ -15,8 +15,8 @@ class ReviewerAgent:
         :param draft_state:
         :return:
         """
-        task = draft_state.get("task")
-        guidelines = '- '.join(guideline for guideline in task.get("guidelines"))
+        task           = draft_state.get("task")
+        guidelines     = '- '.join(guideline for guideline in task.get("guidelines"))
         revision_notes = draft_state.get("revision_notes")
 
         revise_prompt = f"""The reviser has already revised the draft based on your previous review notes with the following feedback:

@@ -48,7 +48,7 @@ def call_model(prompt: list, model: str, max_retries: int = 2, response_format: 
 
     model_kwargs = {}
     if response_format == 'json':
-        model_kwargs["response_format"] = {"type": "json_object"}
+        model_kwargs["response_format"] = {"type": "json_object"}     # JSON モード。★ ChatGoogleGenerativeAI に変えたけど、Gemini は JSON モードをサポートしていない。一旦やってみて JSON パースに失敗するなら元に戻す。Gemini の性能が高ければ JSON モードが使えなくても良い感じに JSON で返してくれるはず。
 
     lc_messages = convert_openai_messages(prompt)
     # response = ChatOpenAI(model=model, max_retries=max_retries, model_kwargs=optional_params).invoke(lc_messages).content

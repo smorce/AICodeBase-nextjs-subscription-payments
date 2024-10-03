@@ -1,10 +1,9 @@
-from .utils.file_formats import \
+from utils.file_formats import \
     write_md_to_pdf, \
     write_md_to_word, \
     write_text_to_md
 
-from .utils.views import print_agent_output
-from taskweaver.memory.attachment import AttachmentType
+from utils.views import print_agent_output
 
 
 class PublisherAgent:
@@ -43,7 +42,7 @@ class PublisherAgent:
 """
         return layout
 
-    async def write_report_by_formats(self, layout:str, publish_formats: dict):
+    async def write_report_by_formats(self, layout: str, publish_formats: dict):
         if publish_formats.get("pdf"):
             await write_md_to_pdf(layout, self.output_dir)
         if publish_formats.get("docx"):
@@ -55,9 +54,8 @@ class PublisherAgent:
         task = research_state.get("task")
         post_proxy = research_state.get("post_proxy")          # 追加
         # 追加
-        post_proxy.update_attachment(
-            message=f"PublisherAgent: 最終レポートを PDF、Docx、Markdown などのマルチフォーマットで公開します…\n",
-            type=AttachmentType.web_search_text,
+        post_proxy.progress(
+            message=f"PublisherAgent: 最終レポートを PDF、Docx、Markdown などのマルチフォーマットで公開します…\n"
         )
 
         publish_formats = task.get("publish_formats")
