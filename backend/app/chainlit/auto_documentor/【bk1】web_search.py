@@ -168,16 +168,10 @@ class WebSearch(Role):
 
     def reply(self, memory: Memory, **kwargs) -> Post:           # ★ reply メソッド の中身を with self.event_emitter.handle_events_ctx(event_handler): の中に記述する
         from utils.views import print_agent_output
-        rounds = memory.get_role_rounds(
-            role=self.alias,
-            include_failure_rounds=False,
-        )
-        last_post = rounds[-1].post_list[-1]
-        post_proxy = self.event_emitter.create_post_proxy(self.alias)
-        post_proxy.update_send_to(last_post.send_from)
+        post_proxy = self.event_emitter.create_post_proxy(role_name='AutoDocuMentor Agent', is_sequence = isOverrideChildStreamingToken)  みたいにする
 
-        # Planner から渡されたメッセージをクエリにする
-        self.query = last_post.message
+        # user_input
+        self.query = message.content
 
         # # ディレクトリ構造を出力する関数
         # def print_directory_structure(directory, indent=0):
@@ -253,40 +247,11 @@ class WebSearch(Role):
             print_agent_output(f"Starting the research process for query '{self.task.get('query')}'...", "MASTER")
 
 
+            with post_proxy.override_sequence_temporarily(True):
+                post_proxy.progress("一時的に is_sequence を True にして上書きする 1")
+                post_proxy.update_status("一時的に is_sequence を True にして上書きする 2")
 
-            # ------------------------------------
-            # update_attachment のデバッグ
-            # → やっぱりこれだった
-            # ------------------------------------
-            text_message = (
-                "1. ああああ\n"
-                "2.いいいい\n"
-                "3. うううう\n"
-                "4.ええええ"
-                )
-            post_proxy.update_attachment(
-                message=text_message,
-                type=AttachmentType.web_search_text,
-            )
 
-            post_proxy.update_attachment(
-                message="1. WebSearch is transforming the pages...",
-                type=AttachmentType.thought,
-            )
-
-            post_proxy.update_attachment(
-                message=f"2.WebSearch is querying the pages on ...",
-                type=AttachmentType.text,
-            )
-
-            bulletin_message = (
-                f"I have drawn up a plan: \n"
-                f"Please proceed with this step of this plan:"
-                )
-            post_proxy.update_attachment(
-                message=bulletin_message,
-                type=AttachmentType.board,
-            )
             # ------------------------------------
 
             # 非同期処理を実行

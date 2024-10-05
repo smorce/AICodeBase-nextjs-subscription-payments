@@ -67,6 +67,8 @@
   - テストするときは isOverrideChildStreamingToken だけ変更すればOK
 
 
+## pending
+- なし
 
 
 ## LangGraph
@@ -77,9 +79,15 @@
   - この画像について詳細を教えて下さい。
 
 
-
-## pending
-- なし
+## Chainlit ページを新しく追加する手順。ミドルウェアを使う場合のケース。
+- backend
+  - chainlit_app.py を作成する
+  - backend/entrypoint.sh の一番下に追加する
+  - compose.yaml のバックエンドにポートを追加する
+- frontend
+  - middleware.ts に追加する
+  - frontend/app にページ追加
+  - components/ui/Navbar/Navlinks.tsx にリンクを追加
 
 
 

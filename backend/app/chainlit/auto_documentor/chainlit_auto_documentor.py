@@ -1,37 +1,13 @@
 import chainlit as cl
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
+import asyncio
 import time
-from enum import Enum
-import random  # 乱数を生成するために追加
+from web_search import WebSearch
 
 """
 LangChain のコールバックを使わずに Python の標準機能でコールバックとイベントハンドラーを実装
 """
-
-# ----------------------------------------------
-# 子ステップのストリーミングトークンを上書きするか？
-# ----------------------------------------------
-# True:  上書きする
-# False: 上書きせずに続きにストリーミングトークンを生成する
-isOverrideChildStreamingToken = False
-
-# もし上書きするか続きを生成するか細かく制御したい場合は
-# post_proxy.is_sequence = True
-# post_proxy.is_sequence = False
-# のように post_proxy.progress("aaa") する直前に is_sequence の値を上書きすれば良い。上書きしたら元に戻す。
-# ↓
-# この実装を contextmanager を使って実装した。 override_sequence_temporarily メソッドの部分。
-# 使い方
-# 一時的に is_sequence の値を変更したい場合は
-# ---
-# with post_proxy.override_sequence_temporarily(True):
-#     post_proxy.progress("Sequence progress 1")
-#     post_proxy.progress("Sequence progress 2")
-# ---
-# のように使う。 with 文で書くことでリソースが自動的に開放され is_sequence の値が元に戻る。
-# ----------------------------------------------
-
 
 # イベントハンドラーの基底クラス
 class SessionEventHandler:
@@ -293,6 +269,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
         :param root_step: 親ステップとなる ChainLit のステップオブジェクト
         """        
         self.root_step = root_step
+        # 子ステップを作成する理由
         # 親ステップ(root_step)が上書きされちゃうので、子ステップ(cur_step)をネストして、子ステップの表示を更新する
         self.cur_step: Optional[cl.Step] = None
         self.suppress_blinking_cursor()            # あってもなくても見た目変わらなかったのでどっちでも良さそう
@@ -313,7 +290,6 @@ class ChainLitMessageUpdater(SessionEventHandler):
         event_type  = event['type']
         is_sequence = event['is_sequence']
         cl.run_sync(self.root_step.stream_token(f"親ステップに表示される内容です。{event['role']}が処理中……", True))   # 親ステップに表示される内容。ここの表示は上書きするようにする
-        # await cl.Message(author="プランナーエージェント", content="デバッグ1を残すにはこれを使う").send()    # handleメソッドを非同期にしないと使えない。あと、子ステップをネストしたので表示は親ステップの表示は上書きされなくなったので、そもそも不要
 
 
         # イベントを受け取り、UIをリアルタイムで更新
@@ -326,25 +302,21 @@ class ChainLitMessageUpdater(SessionEventHandler):
             cl.run_sync(self.cur_step.stream_token(content, is_sequence))
             self.root_step.output = f"{event['role']}のタスクを開始します"
             cl.run_sync(self.root_step.update())    # エージェントのタスクが開始したら親ステップのメッセージを更新する
-            time.sleep(3)
         elif event_type == 'progress':
             # 進捗状況を子ステップに表示
             if self.cur_step:
                 content = f"★進捗: {event['message']}\n" if is_sequence else f"\n★進捗: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
-                time.sleep(3)
         elif event_type == 'status':
             # ステータスメッセージを子ステップに表示
             if self.cur_step:
                 content = f"★ステータス: {event['message']}\n" if is_sequence else f"\n★ステータス: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
-                time.sleep(3)
         elif event_type == 'update_message':
             # メッセージの更新を子ステップに表示
             if self.cur_step:
                 content = f"★メッセージ更新: {event['message']}\n" if is_sequence else f"\n★メッセージ更新: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
-                time.sleep(3)
                 if event.get('is_end', False):
                     # メッセージ更新が終了した場合、ステップを終了
                     cl.run_sync(self.cur_step.__aexit__(None, None, None))
@@ -356,9 +328,8 @@ class ChainLitMessageUpdater(SessionEventHandler):
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
                 cl.run_sync(self.cur_step.__aexit__(None, None, None))
                 self.cur_step = None
-                time.sleep(3)
         elif event_type == 'end':
-            # 処理完了メッセージを子ステップに表示し、ステップを終了
+            # 処理完了メッセージを子ステップに表示し、ステップを終了。親ステップの表示も更新する
             if self.cur_step:
                 content = f"★終了: {event['message']}\n" if is_sequence else f"\n★終了: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
@@ -366,13 +337,11 @@ class ChainLitMessageUpdater(SessionEventHandler):
                 self.cur_step = None
                 self.root_step.output = f"{event['role']}のタスクが完了しました"
                 cl.run_sync(self.root_step.update())    # エージェントのタスクが終了したら親ステップのメッセージを更新する
-                time.sleep(3)
         else:
             # その他のイベント
             if self.cur_step:
                 content = f"★その他のイベント: {event['message']}\n" if is_sequence else f"\n★その他のイベント: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
-                time.sleep(3)
 
 
 
@@ -403,8 +372,6 @@ class Session:
         :return: 処理結果のメッセージ
         """
 
-        import asyncio
-
         def run_async_safely(coro):
             """この関数は、同期コンテキストと非同期コンテキストの両方で
                非同期コードを実行するのに役立ちます。"""
@@ -415,6 +382,7 @@ class Session:
                 return asyncio.ensure_future(coro)
 
 
+        # 呼び出すロールを検討する関数
         async def async_process():
             async with cl.Step(name="プランナーエージェント(ロールを検討する)") as stepA:
 
@@ -426,68 +394,23 @@ class Session:
                 await cl.sleep(6)
                 print("TaskWeaver の実装を踏襲しているので呼び出すエージェントが 1 つになっているが、ここを LLMcompiler にすると良さそう")
 
-                await stepA.stream_token("Webサーチエージェントを呼び出すことに決定しました", True)
-                # ここで Webサーチエージェントを呼び出す
-                # worker_instances = WebSearch(self.event_emitter)
+                await stepA.stream_token("AutoDocuMentor Agent を呼び出すことに決定しました", True)
+                worker_instances = WebSearch(self.event_emitter)
 
                 await cl.sleep(3)
 
-                return "ここで worker_instances をリターンする。仮実装なので、ここでは文字列をリターン"
-
-
-
-
-        # 同期関数の中で非同期関数を動かす
-        result = run_async_safely(async_process())
-        print("async_process の結果:",  result)
+                return worker_instances
 
 
 
         with self.event_emitter.handle_events_ctx(event_handler):
-            # ★ラウンドIDを設定（ここでは簡単のために固定値を使用）。Chainlit の セッションid が正しいかも
-            self.event_emitter.current_round_id = "round_1"
-
+            
+            worker_instances = run_async_safely(async_process())
+            
             # ★TaskWeaver では ここで Role の replay メソッドを呼び出している
-            # PostEventProxyを作成。is_sequence = False でストリーミングトークンが続きに出力される
-            post_proxy = self.event_emitter.create_post_proxy(role_name='リサーチエージェント', is_sequence = isOverrideChildStreamingToken)
-
-            # メッセージ処理中にランダムなイベントを発生させる
-            steps = random.randint(3, 6)  # ランダムなステップ数
-            for i in range(1, steps + 1):
-                # ランダムにイベントタイプを選択
-                event_type = random.choice(['progress', 'progress', 'status', 'status', 'progress', 'update_message', 'update_message', 'progress', 'progress', 'error'])
-                if event_type == 'progress':
-                    # ステータス更新イベントを発行
-                    post_proxy.progress(f"ステップ {i}/{steps} を処理中...")
-                    # 処理の遅延をシミュレート
-                    time.sleep(3)
-
-                elif event_type == 'status':
-                    # ステータス更新イベントを発行
-                    post_proxy.update_status(f"ステップ {i}/{steps} を処理中...")
-                    # 処理の遅延をシミュレート
-                    time.sleep(3)
-
-                elif event_type == 'update_message':
-                    # メッセージ更新イベントを発行
-                    is_end = (i == steps)  # 最後のステップでメッセージ更新を終了
-                    post_proxy.update_message(f"中間結果 {i}", is_end=is_end)
-                    # 処理の遅延をシミュレート
-                    time.sleep(3)
-                    if is_end:
-                        # メッセージ更新が終了したのでループを抜ける
-                        break
-
-                elif event_type == 'error':
-                    # エラーイベントを発行し、処理を中断
-                    post_proxy.error(f"エラーが発生しました。ステップ {i}")
-                    return f"エラーが発生しました。ステップ {i}"
-
-            # 処理の終了を通知
-            post_proxy.end(f"メッセージ '{message}' の処理が完了しました。")
-
-            # 最終的なレスポンスを返す
-            return f"メッセージ '{message}' の処理が完了しました。"
+            # worker_instances.replay(message)
+            worker_response = worker_instances.debug_reply(message)     # ★デバッグ中
+            return worker_response
 
 
 
@@ -514,8 +437,6 @@ async def on_chat_start():
 
 
 
-
-
 # メイン関数：ユーザーメッセージの処理
 @cl.on_message
 async def main(message: cl.Message):
@@ -535,6 +456,7 @@ async def main(message: cl.Message):
             author="プランナーエージェント",
             content="終わりました。",
         ).send()
+
 
 
 

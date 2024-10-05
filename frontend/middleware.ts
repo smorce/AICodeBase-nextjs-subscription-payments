@@ -73,10 +73,16 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(redirectUrl);
     }
 
+    // 認証されている場合、/auto_documentor へのアクセスを http://127.0.0.1:8494/ にリダイレクト
+    if (user && request.nextUrl.pathname.startsWith('/auto_documentor')) {
+        const redirectUrl = new URL('http://127.0.0.1:8494/');
+        return NextResponse.redirect(redirectUrl);
+    }
+
     return response;
 }
 
-// matcher 設定により、/chainlit, /langgraph, /callbacks 以下の全てのパスに対してミドルウェアが適用されます
+// matcher 設定により、/chainlit, /langgraph, /callbacks, auto_documentor 以下の全てのパスに対してミドルウェアが適用されます
 export const config = {
-    matcher: ['/chainlit/:path*', '/langgraph/:path*', '/callbacks/:path*'],
+    matcher: ['/chainlit/:path*', '/langgraph/:path*', '/callbacks/:path*', '/auto_documentor/:path*'],
 };

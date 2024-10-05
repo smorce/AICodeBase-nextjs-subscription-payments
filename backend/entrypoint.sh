@@ -33,4 +33,5 @@ source /app/.env
 # chainlit アプリケーションを動かす
 exec chainlit run app/chainlit/simple_app/chainlit_app.py -w --host 0.0.0.0 --port 8491 & \
 chainlit run app/chainlit/langgraph/chainlit_langgraph.py -w --host 0.0.0.0 --port 8492 & \
-chainlit run app/chainlit/callbacks/chainlit_callbacks.py -w --host 0.0.0.0 --port 8493
+chainlit run app/chainlit/callbacks/chainlit_callbacks.py -w --host 0.0.0.0 --port 8493 & \
+chainlit run app/chainlit/auto_documentor/chainlit_auto_documentor.py -w --host 0.0.0.0 --port 8494

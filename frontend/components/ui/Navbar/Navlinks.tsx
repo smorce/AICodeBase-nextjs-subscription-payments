@@ -45,6 +45,9 @@ export default function Navlinks({ user }: NavlinksProps) {
               <Link href="/callbacks" className={s.link}>
                 Callbacks
               </Link>
+              <Link href="/auto_documentor" className={s.link}>
+                AutoDocuMentor
+              </Link>
               <Link href="/account" className={s.link}>
                 Account
               </Link>
