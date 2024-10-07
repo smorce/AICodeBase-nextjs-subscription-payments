@@ -1,36 +1,25 @@
 from datetime import datetime
 from utils.views import print_agent_output
 from utils.llms import call_model
+from memory.draft import DraftState
 from langgraph.graph import StateGraph, END
 import asyncio
 import json
 import re
 
-import sys
-import os
+from path_setup import setup_paths
+setup_paths()
 
-# 現在のディレクトリをこのファイルが存在するディレクトリに変更します
-# os.chdir(os.path.dirname(__file__))
-
-# 現在のディレクトリ
-# CURRENT_DIR = os.getcwd()
-
-# パスの追加
-# sys.path.append(CURRENT_DIR)
-
-
-# backendディレクトリへのパスを追加
-# 全てのディレクトリに__init__.pyファイルを配置し、以下をやらないと絶対インポートでモジュールを読み込むことができなかった
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
-
-
-from memory.draft import DraftState
-# 絶対インポートする
-# どうやっても相対インポートが無理だった。Dockerファイルでパスを通したりしないとダメか？
-from app.chainlit.auto_documentor.researcher import ResearchAgent
-from app.chainlit.auto_documentor.reviewer import ReviewerAgent
-from app.chainlit.auto_documentor.writer import WriterAgent
-
+try:
+    # 絶対インポートする
+    # どうやっても相対インポートが無理だった。Dockerファイルでパスを通したりしないとダメか？
+    from app.chainlit.auto_documentor.researcher import ResearchAgent
+    from app.chainlit.auto_documentor.reviewer import ReviewerAgent
+    from app.chainlit.auto_documentor.writer import WriterAgent
+except ImportError as e:
+    print(f"必要なライブラリをインポートできませんでした: {e}")
+    import sys
+    sys.exit(1)
 
 class EditorAgent:
     def __init__(self, task: dict):

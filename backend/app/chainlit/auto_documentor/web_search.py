@@ -31,9 +31,9 @@ if is_LangSmith:
 load_dotenv()
 
 # モジュールをインポートするためにパスの追加が必要。これを入れてもカレントディレクトリは変わらない。
-# ここで追加しておけば全てのファイルに反映されると思ったけど、そんなことはなさそう
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # 現在のファイルのディレクトリを追加
+# 以下は書くファイルで必要
+from path_setup import setup_paths
+setup_paths()
 
 
 task_json_path = os.path.join(os.getcwd(), 'app', 'chainlit', 'auto_documentor','task.json')

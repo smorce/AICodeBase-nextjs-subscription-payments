@@ -1,6 +1,11 @@
-from gpt_researcher.master.agent import GPTResearcher
-from colorama import Fore, Style
-from utils.views import print_agent_output
+try:
+    from gpt_researcher.master.agent import GPTResearcher
+    from colorama import Fore, Style
+    from utils.views import print_agent_output
+except ImportError as e:
+    print(f"必要なライブラリをインポートできませんでした: {e}")
+    import sys
+    sys.exit(1)
 
 
 class ResearchAgent:
