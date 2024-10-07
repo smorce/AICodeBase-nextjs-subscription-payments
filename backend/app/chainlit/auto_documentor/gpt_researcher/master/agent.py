@@ -106,18 +106,18 @@ class GPTResearcher:
 
         if self.verbose:
             print("デバッグ stream_output 前")
-            # この関数の目的は、出力をWebSocketを通じてストリームすることです。また、条件に応じてログに出力することもできます。
+            # この関数の目的は、出力を WebSocket を通じてコンソールにストリーミング出力することです。
             # websocket オブジェクトの send_json メソッドを使用して、type と output を含むJSONデータを非同期で送信します。WebSocket通信が完了するまで待機します。
             await stream_output("logs", self.agent, self.websocket)
-            print("デバッグ stream_output done!")    # ここは確認できた
+            print("デバッグ stream_output done!")   # ここは確認できた
 
         # If specified, the researcher will use the given urls as the context for the research.
         if self.source_urls:
-            print("デバッグ1 source_urls YES")    # こっちはないっぽい
+            print("デバッグ1 source_urls YES")      # こっちはないっぽい
             self.context = await self.get_context_by_urls(self.source_urls)
             print("デバッグ1 source_urls done!")
         else:
-            print("デバッグ2 source_urls NO")    # ここは確認できた
+            print("デバッグ2 source_urls NO")       # ここは確認できた
             self.context = await self.get_context_by_search(self.query)
             print("デバッグ2 source_urls done!")    # ここは確認できた
 
@@ -198,7 +198,7 @@ class GPTResearcher:
 
         print("デバッグ get_context_by_search関数 前3")
         # Using asyncio.gather to process the sub_queries asynchronously
-        # context(list) とは TAVILY.search(sub_query) を使って URL を取得 → BeautifulSoup を使ってクリーンな文字列(Webページの生テキスト)を取得し、そこからサブクエリに関係のありそうなコンテンツを抜き出したもの
+        # context(list) とは TAVILY.search(sub_query) を使って URL を取得 → BeautifulSoup に URL を入力してクリーンな文字列(Webページの生テキスト)を取得し、そこからサブクエリに関係のありそうなコンテンツを抜き出したもの
         context = await asyncio.gather(*[self.process_sub_query(sub_query) for sub_query in sub_queries])
         print("デバッグ get_context_by_search関数 後3")
         return context
@@ -223,7 +223,9 @@ class GPTResearcher:
         print("デバッグ process_sub_query関数 後2")
 
         if content and self.verbose:
-            await stream_output("logs", f"📃 {content}", self.websocket)
+            # await stream_output("logs", f"📃 {content}", self.websocket)
+            # コンテンツが大量に吐き出されてコンソールが見づらくなっているので省略した
+            await stream_output("logs", f"📃 {content[:5]}……", self.websocket)
         elif self.verbose:
             await stream_output("logs", f"🤷 No content found for '{sub_query}'...", self.websocket)
         return content

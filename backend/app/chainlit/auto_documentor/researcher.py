@@ -13,7 +13,6 @@ class ResearchAgent:
         pass
 
     async def research(self, query: str, research_report: str = "research_report", parent_query: str = "", verbose=True):
-        """初期計画を立案"""
         # gpt_researcher/master/agent.py
         researcher = GPTResearcher(query=query, report_type=research_report, parent_query=parent_query, verbose=verbose)
         # Conduct research on the given query
@@ -47,7 +46,7 @@ class ResearchAgent:
         """サブトピックの調査"""
         task = draft_state.get("task")     # task.json
         topic = draft_state.get("topic")   # サブトピック
-        parent_query = task.get("query")   # プランナーから渡されたクエリ
+        parent_query = task.get("query")   # ユーザークエリ
         verbose = task.get("verbose")
         print_agent_output(f"Running in depth research on the following report topic: {topic}", agent="RESEARCHER")
         # print("デバッグ run_depth_research関数。3秒間スリープする")

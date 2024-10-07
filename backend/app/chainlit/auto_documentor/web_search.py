@@ -184,7 +184,7 @@ class WebSearch():
             # -----------------------------------------------------
             with open(task_json_path, 'r') as f:
                 # これはリサーチャー以外のマルチエージェントで使う LLM                
-                task = json.load(f)    # ★これも環境変数から読み込もう
+                task = json.load(f)    # ★これも環境変数から読み込もうと思ったけど、環境変数に書く内容はAPIキーに絞った方が良さそう。jsonファイルのままルートディレクトリに移動させたい。
 
             task["query"] = self.query    # ★ここは Chainlit の user_input にした
             self.task = task

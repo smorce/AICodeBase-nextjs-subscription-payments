@@ -41,7 +41,7 @@ class EditorAgent:
             message=f"EditorAgent: 初期調査に基づいてレポートの概要と構成を計画中…\n"
         )
         post_proxy.progress(
-            message=f"初期調査を表示してみる: {initial_research}"
+            message=f"初期調査を表示してみる\n\n{initial_research}"
         )
 
         prompt = [{
