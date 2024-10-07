@@ -10,13 +10,17 @@ import sys
 import os
 
 # 現在のディレクトリをこのファイルが存在するディレクトリに変更します
-os.chdir(os.path.dirname(__file__))
+# os.chdir(os.path.dirname(__file__))
 
 # 現在のディレクトリ
-CURRENT_DIR = os.getcwd()
+# CURRENT_DIR = os.getcwd()
 
 # パスの追加
-sys.path.append(CURRENT_DIR)
+# sys.path.append(CURRENT_DIR)
+
+# モジュールをインポートするためにパスの追加が必要。これを入れてもカレントディレクトリは変わらない。
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # 現在のファイルのディレクトリを追加
 
 from memory.draft import DraftState
 try:

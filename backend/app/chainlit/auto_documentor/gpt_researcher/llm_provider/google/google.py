@@ -27,10 +27,10 @@ class GoogleProvider:
 
         """
         try:
-            api_key = os.environ["LLM_GOOGLE_GENAI_API_KEY"]
+            api_key = os.environ["GOOGLE_API_KEY"]
         except:
             raise Exception(
-                "GEMINI API key not found. Please set the LLM_GOOGLE_GENAI_API_KEY environment variable.")
+                "GEMINI API key not found. Please set the GOOGLE_API_KEY environment variable.")
         return api_key
 
     def get_llm_model(self):

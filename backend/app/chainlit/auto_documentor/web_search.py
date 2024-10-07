@@ -31,19 +31,12 @@ if is_LangSmith:
 load_dotenv()
 
 # モジュールをインポートするためにパスの追加が必要。これを入れてもカレントディレクトリは変わらない。
+# ここで追加しておけば全てのファイルに反映されると思ったけど、そんなことはなさそう
 import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # 現在のファイルのディレクトリを追加
 
 
-
-# 現在のディレクトリをこのファイルが存在するディレクトリに変更します   ←  ★これのせいで chainlit_auto_documentor.py がおかしいことになっている。なので消したい。
-# os.chdir(os.path.dirname(__file__))
-
-# 現在のディレクトリ
-# CURRENT_DIR = os.getcwd()    # ★これも要らないかも
-
-# task.json ファイルへのパスを構築
-# task_json_path = os.path.join(CURRENT_DIR, 'task.json')
+task_json_path = os.path.join(os.getcwd(), 'app', 'chainlit', 'auto_documentor','task.json')
 
 
 
@@ -194,9 +187,11 @@ class WebSearch():
                 task = json.load(f)    # ★これも環境変数から読み込もう
 
             task["query"] = self.query    # ★ここは Chainlit の user_input にした
-            self.output_dir = f"../../../.files/{self.current_round_id}/{task.get('query')[0:40]}"   # ★ Chainlit の .files  に変更する
             self.task = task
+            
+            self.output_dir = os.path.join(os.getcwd(), '.files', self.event_emitter.current_round_id, task.get('query')[0:40])
             os.makedirs(self.output_dir, exist_ok=True)
+
 
             # エージェントの初期化
             self.writer     = WriterAgent()
@@ -232,7 +227,7 @@ class WebSearch():
         except Exception as e:
             raise Exception(f"Failed to initialize the plugin due to: {e}")
 
-    def reply(self, user_input: str) -> str:           # ★ with self.event_emitter.handle_events_ctx(event_handler): の中に replay メソッドを記述する
+    def reply(self, user_input: str) -> str:
 
         self.query = user_input
         isOverrideChildStreamingToken = False
@@ -353,9 +348,20 @@ class WebSearch():
             print_agent_output(f"Starting the research process for query '{self.task.get('query')}'...", "MASTER")
 
 
-            with post_proxy.override_sequence_temporarily(True):
-                post_proxy.progress("一時的に is_sequence を True にして上書きする 1")
-                post_proxy.update_status("一時的に is_sequence を True にして上書きする 2")
+            # with post_proxy.override_sequence_temporarily(True):
+                # 一度でも True にすると False にして出したものも全部消えちゃうっぽい
+                # なので、一回 .send() で確定させる必要があるかも
+                # → is_sequence が 上書きされたか？フラグ を作って send で確定させて、新しいステップを開始して、stream_token(content, True)して、ステップを終了させる。という処理になりそう。
+                # → かなり複雑化するのでやめた方が良い。新しいステップが開始する見え方も不自然なので。実装したけど、基本的に 途中で override_sequence_temporarily(True) する処理は使わないようにする。
+                # post_proxy.progress("デバッグ 一時的に is_sequence を True にして上書きする 1")
+                # post_proxy.update_status("デバッグ 一時的に is_sequence を True にして上書きする 2")
+                # ↓ もっと簡単に実装した。直前のコンテンツを削除して続きを生成する
+            time.sleep(6)
+            post_proxy.progress("prev_content_delete で 'この文章' を削除します")
+            time.sleep(6)
+            post_proxy.prev_content_delete()
+            post_proxy.update_status("上書きしました！")
+            time.sleep(6)
 
 
             # ------------------------------------
@@ -403,7 +409,7 @@ class WebSearch():
 
 
         except Exception as e:
-            self.logger.error(f"Failed to reply due to: {e}")
+            print(f"Failed to reply due to: {e}")
 
 
 
@@ -416,65 +422,7 @@ class WebSearch():
         post_proxy.end("リサーチプロセスは完了しました！ついでにレポートも作成しました！")
 
         # 最終的なレスポンスを返す
-        return f"round_id = {post_proxy.round_id}: {post_proxy.role_name}の処理が完了しました。"
-
-
-
-    def debug_reply(self, user_input: str) -> str:
-        """★デバッグ  後で消す。ちゃんとUIが更新されるか？？"""
-        self.query = user_input
-        isOverrideChildStreamingToken = False
-
-        task_json_path = os.path.join(os.getcwd(), 'app', 'chainlit', 'auto_documentor','task.json')
-        with open(task_json_path, 'r') as f:
-            task = json.load(f)
-
-        print(f"★デバッグ task = {task}")
-
-        import random
-        from utils.views import print_agent_output
-
-        post_proxy = self.event_emitter.create_post_proxy(role_name='AutoDocuMentor Agent',
-                                                        is_sequence=isOverrideChildStreamingToken)
-
-
-        # メッセージ処理中にランダムなイベントを発生させる
-        steps = random.randint(3, 6)  # ランダムなステップ数
-        for i in range(1, steps + 1):
-            # ランダムにイベントタイプを選択
-            event_type = random.choice(['progress', 'progress', 'status', 'status', 'progress', 'update_message', 'update_message', 'progress', 'progress', 'error'])
-            if event_type == 'progress':
-                # ステータス更新イベントを発行
-                post_proxy.progress(f"ステップ {i}/{steps} を処理中...")
-                # 処理の遅延をシミュレート
-                time.sleep(3)
-
-            elif event_type == 'status':
-                # ステータス更新イベントを発行
-                post_proxy.update_status(f"ステップ {i}/{steps} を処理中...")
-                # 処理の遅延をシミュレート
-                time.sleep(3)
-
-            elif event_type == 'update_message':
-                # メッセージ更新イベントを発行
-                is_end = (i == steps)  # 最後のステップでメッセージ更新を終了
-                post_proxy.update_message(f"中間結果 {i}", is_end=is_end)
-                # 処理の遅延をシミュレート
-                time.sleep(3)
-                if is_end:
-                    # メッセージ更新が終了したのでループを抜ける
-                    break
-
-            elif event_type == 'error':
-                # エラーイベントを発行し、処理を中断
-                post_proxy.error(f"エラーが発生しました。ステップ {i}")
-                return f"エラーが発生しました。ステップ {i}"
-
-        # 処理の終了を通知
-        post_proxy.end(f"メッセージ '{self.query}' の処理が完了しました。")
-
-        # 最終的なレスポンスを返す
-        return f"round_id = {post_proxy.round_id}: {post_proxy.role_name} の {self.query} の処理が完了しました。"
+        return f"round_id = {post_proxy.round_id}: {post_proxy.role_name} の処理が完了しました。"
 
 
 

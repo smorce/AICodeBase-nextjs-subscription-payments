@@ -161,6 +161,10 @@ async def write_md_to_ppt(text: str, path: str) -> str:
         print(f"Report written to {file_path}")
 
 
+
+        """
+        マウントできているので、もうココは要らないので捨てたい。合わせてファイルサーバースクリプトもパスを修正したい
+
         # ------------------------------------------
         # マウントしたローカルディレクトリにコピーする
         ★ココを修正
@@ -195,6 +199,7 @@ async def write_md_to_ppt(text: str, path: str) -> str:
         #             print(f"{sub_indent}{f}")
 
         # print_directory_structure("/app")
+        """
 
 
         encoded_file_path = urllib.parse.quote(f"{file_path}.pptx")

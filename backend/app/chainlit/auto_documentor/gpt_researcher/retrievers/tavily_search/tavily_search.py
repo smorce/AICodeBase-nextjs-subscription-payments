@@ -5,8 +5,6 @@ import os
 from tavily import TavilyClient
 from duckduckgo_search import DDGS
 
-
-
 # HTMLをマークダウン化させる
 import requests
 import markdownify

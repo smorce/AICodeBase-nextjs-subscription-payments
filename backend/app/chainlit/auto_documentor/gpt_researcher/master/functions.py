@@ -66,7 +66,11 @@ async def choose_agent(query, cfg, parent_query=None):
     """
     query = f"{parent_query} - {query}" if parent_query else f"{query}"
     print("デバッグ choose_agent の query:", query)
+    print("デバッグ cfg.smart_llm_model:", cfg.smart_llm_model)
+    print("デバッグ auto_agent_instructions():", auto_agent_instructions()[:40])
+    print("デバッグ cfg.llm_provider:", cfg.llm_provider)
     try:
+        print("デバッグ create_chat_completion を呼び出します")
         response = await create_chat_completion(
             model=cfg.smart_llm_model,
             messages=[
@@ -75,6 +79,15 @@ async def choose_agent(query, cfg, parent_query=None):
             temperature=0,
             llm_provider=cfg.llm_provider
         )
+        # ```json
+        # {
+        #   "server": "📰 News Agent",
+        #   "agent_role_prompt": "あなたは、Y Combinatorに関するニュースを専門とするAIアシスタントです。最新のニュースを正確に要約し、複数の信頼できる情報源からの情報を統合して、包括的で客観的なレポートを作成することがあなたの主な目的です。レポートには、日付、情報源、そして可能な限り詳細な情報を含めてください。曖昧な表現や憶測は避け、事実のみを報告してください。"
+        # }
+        # ```
+        # のように、モデルの指示忠実度が高いと ```json``` という余計な文字列が入るので消す
+        response = response.replace("json", "").replace("```", "")
+        print("デバッグ response:", response)
         agent_dict = json.loads(response)
         return agent_dict["server"], agent_dict["agent_role_prompt"]
     except Exception as e:
@@ -182,11 +195,14 @@ After these tasks are completed, the completion is announced to the user. During
 
             def get_final_output(text):
                 keyword = "Final Output"
-                index = text.find(keyword)
-                if index != -1:
-                    return text[index + len(keyword):].strip()
+                if keyword in text:
+                    index = text.find(keyword)
+                    if index != -1:
+                        return text[index + len(keyword):].strip()
                 else:
-                    return None
+                    # Final Output" が存在しない場合は、元のテキストをそのまま返す
+                    return text
+
             # Final Output以降の文字列を取得
             response = get_final_output(response)
             print("Final Output以降", response)

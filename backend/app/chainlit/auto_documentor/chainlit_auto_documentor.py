@@ -247,13 +247,31 @@ class PostEventProxy:
 
     @contextmanager
     def override_sequence_temporarily(self, value: bool):
-        """一時的に is_sequence の値を変更するメソッド"""
+        """
+        【正常に動くけど、使い所がないので基本的に使わない】
+        一時的に is_sequence の値を変更するメソッド
+        一度でも is_sequence を True にすると step.output がまるっと上書きされてしまうため
+        False で表示していた部分も全て消えてしまう
+        """
         original_value = self.is_sequence
         self.is_sequence = value
         try:
             yield
         finally:
             self.is_sequence = original_value
+
+
+    def prev_content_delete(self):
+        """
+        直前のコンテンツを削除します。
+        """        
+        prev_content_delete_event = {
+            'type': 'prev_content_delete',
+            'message': None,
+            'role': self.role_name,
+            'is_sequence': self.is_sequence,
+        }
+        self.emitter.emit(prev_content_delete_event)
 
 
 
@@ -272,7 +290,9 @@ class ChainLitMessageUpdater(SessionEventHandler):
         # 子ステップを作成する理由
         # 親ステップ(root_step)が上書きされちゃうので、子ステップ(cur_step)をネストして、子ステップの表示を更新する
         self.cur_step: Optional[cl.Step] = None
-        self.suppress_blinking_cursor()            # あってもなくても見た目変わらなかったのでどっちでも良さそう
+        # prev_content_delete で使うための変数
+        self.prev_content: str = None
+        self.suppress_blinking_cursor()  # あってもなくても見た目変わらなかったのでどっちでも良さそう
 
 
     def suppress_blinking_cursor(self):
@@ -300,6 +320,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
             cl.run_sync(self.cur_step.__aenter__())
             content = f"★開始: {event['message']}\n" if is_sequence else f"\n★開始: {event['message']}\n"    # is_sequence が False ならストリーミングトークンが続きとして出力されるので、先頭に改行コードを追加して、改行してからその続きを出力させる
             cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+            self.prev_content = content    # コンテンツを更新したら delete するために直前のメッセージを記憶しておく。エラーイベントとエンドイベントのときは更新しない。
             self.root_step.output = f"{event['role']}のタスクを開始します"
             cl.run_sync(self.root_step.update())    # エージェントのタスクが開始したら親ステップのメッセージを更新する
         elif event_type == 'progress':
@@ -307,20 +328,28 @@ class ChainLitMessageUpdater(SessionEventHandler):
             if self.cur_step:
                 content = f"★進捗: {event['message']}\n" if is_sequence else f"\n★進捗: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+                self.prev_content = content
         elif event_type == 'status':
             # ステータスメッセージを子ステップに表示
             if self.cur_step:
                 content = f"★ステータス: {event['message']}\n" if is_sequence else f"\n★ステータス: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+                self.prev_content = content
         elif event_type == 'update_message':
             # メッセージの更新を子ステップに表示
             if self.cur_step:
                 content = f"★メッセージ更新: {event['message']}\n" if is_sequence else f"\n★メッセージ更新: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+                self.prev_content = content
                 if event.get('is_end', False):
                     # メッセージ更新が終了した場合、ステップを終了
                     cl.run_sync(self.cur_step.__aexit__(None, None, None))
                     self.cur_step = None
+        elif event_type == 'prev_content_delete':
+            # 直前のコンテンツを削除する
+            if self.cur_step:
+                self.cur_step.output = self.cur_step.output[:-len(self.prev_content)]
+                cl.run_sync(self.cur_step.update())
         elif event_type == 'error':
             # エラーメッセージを子ステップに表示し、ステップを終了
             if self.cur_step:
@@ -342,7 +371,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
             if self.cur_step:
                 content = f"★その他のイベント: {event['message']}\n" if is_sequence else f"\n★その他のイベント: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
-
+                self.prev_content = content
 
 
 # セッションを管理するクラス
@@ -384,32 +413,29 @@ class Session:
 
         # 呼び出すロールを検討する関数
         async def async_process():
-            async with cl.Step(name="プランナーエージェント(ロールを検討する)") as stepA:
+            async with cl.Step(name="プランナーエージェント(ロールを検討する)") as RoleThinkingStep:
 
-                stepA.input  = message + " ← ユーザークエリ"
-                await stepA.stream_token("ユーザークエリを分析してどのエージェントを呼び出すか考え中……", True)
+                RoleThinkingStep.input  = message + " ← ユーザークエリ"
+                await RoleThinkingStep.stream_token("ユーザークエリを分析してどのエージェントを呼び出すか考え中……", True)
 
                 # ここにクエリを分析する処理
                 # 遅延でシミュレート
                 await cl.sleep(6)
                 print("TaskWeaver の実装を踏襲しているので呼び出すエージェントが 1 つになっているが、ここを LLMcompiler にすると良さそう")
 
-                await stepA.stream_token("AutoDocuMentor Agent を呼び出すことに決定しました", True)
+                await RoleThinkingStep.stream_token("AutoDocuMentor Agent を呼び出すことに決定しました", True)
                 worker_instances = WebSearch(self.event_emitter)
 
                 await cl.sleep(3)
 
-                return worker_instances
+            return worker_instances
 
 
 
         with self.event_emitter.handle_events_ctx(event_handler):
             
             worker_instances = run_async_safely(async_process())
-            
-            # ★TaskWeaver では ここで Role の replay メソッドを呼び出している
-            # worker_instances.replay(message)
-            worker_response = worker_instances.debug_reply(message)     # ★デバッグ中
+            worker_response = worker_instances.reply(message)
             return worker_response
 
 
@@ -450,7 +476,7 @@ async def main(message: cl.Message):
             message=message.content,
             event_handler=ChainLitMessageUpdater(root_step),
         )
-        # 最終的なレスポンスを表示（結果イベントで表示されるため、ここでは不要かもしれません）
+        # 最終的なレスポンスを表示
         cl.run_sync(root_step.stream_token(f"\n最終的な結果\n{response}", True))   # 親ステップに表示される内容。True なので上書きされる
         await cl.Message(
             author="プランナーエージェント",

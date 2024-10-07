@@ -1,8 +1,97 @@
 from typing import TypedDict, List
 
 
-# ★後で以下はファイル分割してモジュール化する
-# from taskweaver.module.event_emitter import PostEventProxy
+# ------------------------------------------------------------
+# ★以下をモジュール化する
+# ------------------------------------------------------------
+from typing import Optional, List
+from contextlib import contextmanager
+# イベントハンドラーの基底クラス
+class SessionEventHandler:
+    """
+    イベントを処理するための基本的なハンドラークラスです。
+    すべてのカスタムハンドラーはこのクラスを継承します。
+    """
+    def handle(self, event):
+        """
+        イベントを処理するためのメソッドです。サブクラスでオーバーライドします。
+
+        :param event: イベント情報を含む辞書
+        """
+        pass
+
+
+# イベントを管理・発行するクラス
+class SessionEventEmitter:
+    """
+    セッション中のイベントを管理し、登録されたハンドラーにイベントを発行します。
+    """
+    def __init__(self):
+        """
+        イベントエミッターを初期化し、ハンドラーのリストを作成します。
+        """
+        self.handlers: List[SessionEventHandler] = []
+        self.current_round_id: Optional[str] = None  # 現在のラウンドIDを保持
+
+
+    def emit(self, event):
+        """
+        登録されたすべてのハンドラーにイベントを発行します。
+
+        :param event: イベント情報を含む辞書
+        """
+        for handler in self.handlers:
+            handler.handle(event)
+
+
+    def create_post_proxy(self, role_name: str, is_sequence: bool) -> 'PostEventProxy':
+        """
+        :param is_sequence: True でストリーミングトークンを上書きする。 False でストリーミングトークンが続きに出力される
+        """
+        assert self.current_round_id is not None, "Cannot create post proxy without a round in active"
+        # from taskweaver.memory.post import Post
+
+        return PostEventProxy(
+            self,                    # SessionEventEmitter 自身を渡す。つまり、PostEventProxy は自身を作成した SessionEventEmitter インスタンスへの参照を保持することになる。
+            self.current_round_id,
+            role_name,
+            is_sequence,
+        )
+
+
+    @contextmanager
+    def handle_events_ctx(self, handler: Optional[SessionEventHandler] = None):
+        """
+        イベントハンドラーをコンテキスト内で登録・登録解除するためのコンテキストマネージャーです。
+
+        :param handler: 登録するイベントハンドラー
+        """
+        if handler is None:
+            yield
+        else:
+            self.register(handler)
+            try:
+                yield
+            finally:
+                self.unregister(handler)
+
+    def register(self, handler: SessionEventHandler):
+        """
+        イベントハンドラーを登録します。
+
+        :param handler: 登録するイベントハンドラー
+        """
+        self.handlers.append(handler)
+
+    def unregister(self, handler: SessionEventHandler):
+        """
+        イベントハンドラーを登録解除します。
+
+        :param handler: 登録解除するイベントハンドラー
+        """
+        self.handlers.remove(handler)
+
+
 class PostEventProxy:
     """
     イベントを簡単に発行するためのプロキシクラスです。
@@ -161,6 +250,9 @@ class PostEventProxy:
             yield
         finally:
             self.is_sequence = original_value
+
+
+# ------------------------------------------------------------
 
 
 

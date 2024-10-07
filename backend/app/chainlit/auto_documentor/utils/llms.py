@@ -1,5 +1,5 @@
-from langchain.adapters.openai import convert_openai_messages
-# from langchain_openai import ChatOpenAI
+from langchain_community.adapters.openai import convert_openai_messages
+from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser

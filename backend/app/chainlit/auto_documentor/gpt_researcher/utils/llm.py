@@ -1,6 +1,7 @@
 # libraries
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Optional
@@ -14,7 +15,6 @@ from langchain_openai import ChatOpenAI
 from gpt_researcher.master.prompts import auto_agent_instructions, generate_subtopics_prompt
 
 from .validators import Subtopics
-
 
 def get_provider(llm_provider):
     match llm_provider:
@@ -41,7 +41,7 @@ async def create_chat_completion(
         messages: list,  # type: ignore
         model: Optional[str] = None,
         temperature: float = 1.0,
-        max_tokens: Optional[int] = None,
+        max_tokens: Optional[int] = None,    # 出力するトークン数の最大値。入力+出力 のトークン数ではない。
         llm_provider: Optional[str] = None,
         stream: Optional[bool] = False,
         websocket: WebSocket | None = None,
@@ -62,14 +62,10 @@ async def create_chat_completion(
     # validate input
     if model is None:
         raise ValueError("Model cannot be None")
-    if model == "gemini-1.5-flash-latest":
-        if max_tokens is not None and max_tokens > 10001:        # fast_token_limit に合わせて 8001 から増やした
+    if model == "gemini-1.5-flash-002" or model == "gemini-1.5-pro-002":
+        if max_tokens is not None and max_tokens > 8001:                   # flash も pro も 出力トークンの最大値は約 8000 で共通
             raise ValueError(
-                f"Max tokens cannot be more than 10001, but got {max_tokens}")
-    elif model == "gemini-1.5-pro-latest":
-        if max_tokens is not None and max_tokens > 40001:        # smart_llm 用も追加
-            raise ValueError(
-                f"Max tokens cannot be more than 40001, but got {max_tokens}")
+                f"Max tokens cannot be more than 8001, but got {max_tokens}")
 
     # Get the provider from supported providers
     ProviderClass = get_provider(llm_provider)
@@ -80,14 +76,28 @@ async def create_chat_completion(
     )
 
     # create response
-    for _ in range(10):  # maximum of 10 attempts
-        response = await provider.get_chat_response(
-            messages, stream, websocket
-        )
-        return response
+    max_attempts = 10
+    for attempt in range(max_attempts):
+        try:
+            print("auto_documentor/utils/llms.py: 10回チャレンジします")
+            response = await provider.get_chat_response(messages, stream, websocket)
+            # Check if the response is valid. Add specific checks based on your needs.
+            # For example, check if the response is not empty, has the expected format, etc.
+            if response:  # Replace with your validation logic
+                return response
+            else:
+                logging.warning(f"Invalid response received on attempt {attempt + 1}. Retrying...")
+        except Exception as e:
+            logging.error(f"Error on attempt {attempt + 1}: {e}")
+            if attempt < max_attempts - 1:
+                logging.info("Retrying...")
+                # Consider adding a small delay before retrying to avoid overwhelming the API
+                await asyncio.sleep(1)  # Wait for 1 second
+            else:
+                raise  # Re-raise the exception after all attempts have failed
 
-    logging.error("Failed to get response from OpenAI API")
-    raise RuntimeError("Failed to get response from OpenAI API")
+    logging.error("Failed to get a valid response after multiple attempts.")
+    raise RuntimeError("Failed to get a valid response after multiple attempts.")
 
 
 def choose_agent(smart_llm_model: str, llm_provider: str, task: str) -> dict:

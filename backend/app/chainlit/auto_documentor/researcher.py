@@ -1,6 +1,6 @@
 from gpt_researcher.master.agent import GPTResearcher
 from colorama import Fore, Style
-from .utils.views import print_agent_output
+from utils.views import print_agent_output
 
 
 class ResearchAgent:

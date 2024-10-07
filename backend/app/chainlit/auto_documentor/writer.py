@@ -1,9 +1,9 @@
 from datetime import datetime
-import json5 as json
+# import json5 as json   # json5は標準のJSONの上位互換だけど一旦普通の json でやってみる
+import json
 import re
-from .utils.views import print_agent_output
-from .utils.llms import call_model
-from taskweaver.memory.attachment import AttachmentType
+from utils.views import print_agent_output
+from utils.llms import call_model
 
 sample_json = """
 {
@@ -100,9 +100,8 @@ Headers Data: {headers}\n
     def run(self, research_state: dict):
         post_proxy = research_state.get("post_proxy")          # 追加
         # 追加
-        post_proxy.update_attachment(
-            message=f"EditorAgent: 与えられた調査結果からの序論、結論、参考文献のセクションを含む最終レポートを編集中…\n",
-            type=AttachmentType.web_search_text,
+        post_proxy.progress(
+            message=f"EditorAgent: 与えられた調査結果からの序論、結論、参考文献のセクションを含む最終レポートを編集中…\n"
         )
 
         print_agent_output(f"Writing final research report based on research data...", agent="WRITER")

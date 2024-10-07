@@ -28,7 +28,8 @@
   - utils/llms.py
     - Gemini は JSON モードをサポートしていないので、おかしければ元に戻す
   - モジュールのインポートパスは大丈夫か？
-
+- gpt_researcher/llm_provider/__init__.py
+  - openrouter を使っていないけど、ここで読み込んでエラーが出るので API キーを設定した（init から消せばエラーは出ないはずだけど、再度使うかもしれないので一応残しておく）
 
 
 
@@ -115,7 +116,9 @@ aicodebasse-frontend-container         | +schemas = ["public", "graphql_public"]
 - ワーニングメッセージ: Key 'title' is not supported in schema, ignoring
   - https://github.com/langchain-ai/langchain-google/issues/463
   - これは LangGraph のバグらしい。Gemini を使うと出る。問題があるわけではないので一旦保留。DuckDuckGoSearchResults のエラー？？
+- 本来は Gemini はシステムプロンプトがサポートされていないけど、ChatGoogleGenerativeAI はシステムプロンプトを入力してもOKな仕様。
 
+ 
 
 
 ## backend
@@ -206,7 +209,8 @@ AuthApiError: Invalid Refresh Token: Refresh Token Not Found
     - contextlib.contextmanager デコレータを使うと、ジェネレータ関数を使ってカスタムコンテキストマネージャを簡単に作成できます。
 - Chainlit の仕様
   - stream_token() は作成された箱に対して、上書きもしくは続きを連結して出力する仕様なので、.send() しないと確定せず、ずっとその箱を使うことになる。
-  
+- langchain-huggingface はsentence-transformers が入っていてかなり重たい
+  - gpt_researcher/memory/embeddings.py で使っている。Webページとクエリのコンテンツ類似度の計算で使う
 
 
 
