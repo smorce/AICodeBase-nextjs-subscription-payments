@@ -18,18 +18,18 @@ import os
 # パスの追加
 # sys.path.append(CURRENT_DIR)
 
-# モジュールをインポートするためにパスの追加が必要。これを入れてもカレントディレクトリは変わらない。
-import sys
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))  # 現在のファイルのディレクトリを追加
+
+# backendディレクトリへのパスを追加
+# これをやらないと絶対インポートでモジュールを読み込むことができなかった
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
+
 
 from memory.draft import DraftState
-try:
-    from researcher import ResearchAgent
-    from reviewer import ReviewerAgent
-    from reviser import ReviserAgent
-except ImportError as e:
-    print(f"editor.pyのエラー: Failed to import: {e}")
-    # 代替処理やエラーハンドリングをここに追加
+# 絶対インポートする
+# どうやっても相対インポートが無理だった。Dockerファイルでパスを通したりしないとダメか？
+from app.chainlit.auto_documentor.researcher import ResearchAgent
+from app.chainlit.auto_documentor.reviewer import ReviewerAgent
+from app.chainlit.auto_documentor.writer import WriterAgent
 
 
 class EditorAgent:
@@ -75,7 +75,7 @@ class EditorAgent:
 
         print_agent_output(f"Planning an outline layout based on initial research...", agent="EDITOR")
         response = call_model(prompt=prompt, model=self.task.get("model"), response_format="json")
-        print("デバッグ。JSON形式か？ Gemini は JSON モードをサポートしていないので、ココがあやしい。response ↓")
+        print("デバッグ。JSON形式か？ Gemini は JSON モードをサポートしていないので、ココがあやしい。response ↓")    # やっぱりココでコケている
         print(response)
 
         # 正規表現を使って{}の中身を抽出する

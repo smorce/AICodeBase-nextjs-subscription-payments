@@ -23,14 +23,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# アプリケーションコードをコピー
-COPY . /app
+# ビルド時間を短縮するためにアプリケーションコードをコピーする前にライブラリをインストールする
+COPY requirements.txt /app/
 
 # Pythonの依存関係をインストール
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
-# sentence-transformers がかなり重たいので、これだけ requirements.txt から切り出してキャッシュする
-RUN pip install langchain-huggingface==0.1.0
+
+# アプリケーションコードをコピー。このCOPY命令より後のコマンドは、
+# アプリケーションコードに変更があった場合のみ再実行する
+COPY . /app
 
 # スクリプトの所有権をappuserに変更し、実行権限を付与
 RUN chown -R appuser:appgroup /app && \
