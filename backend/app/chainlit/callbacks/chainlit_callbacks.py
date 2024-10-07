@@ -268,16 +268,32 @@ class PostEventProxy:
         }
         self.emitter.emit(end_event)
 
-
     @contextmanager
     def override_sequence_temporarily(self, value: bool):
-        """一時的に is_sequence の値を変更するメソッド"""
+        """
+        【正常に動くけど、使い所がないので基本的に使わない】
+        一時的に is_sequence の値を変更するメソッド
+        一度でも is_sequence を True にすると step.output がまるっと上書きされてしまうため
+        False で表示していた部分も全て消えてしまう
+        """
         original_value = self.is_sequence
         self.is_sequence = value
         try:
             yield
         finally:
             self.is_sequence = original_value
+
+    def prev_content_delete(self):
+        """
+        直前のコンテンツを削除します。
+        """        
+        prev_content_delete_event = {
+            'type': 'prev_content_delete',
+            'message': None,
+            'role': self.role_name,
+            'is_sequence': self.is_sequence,
+        }
+        self.emitter.emit(prev_content_delete_event)
 
 
 
@@ -295,6 +311,8 @@ class ChainLitMessageUpdater(SessionEventHandler):
         self.root_step = root_step
         # 親ステップ(root_step)が上書きされちゃうので、子ステップ(cur_step)をネストして、子ステップの表示を更新する
         self.cur_step: Optional[cl.Step] = None
+        # prev_content_delete で使うための変数
+        self.prev_content: str = None
         self.suppress_blinking_cursor()            # あってもなくても見た目変わらなかったのでどっちでも良さそう
 
 
@@ -324,6 +342,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
             cl.run_sync(self.cur_step.__aenter__())
             content = f"★開始: {event['message']}\n" if is_sequence else f"\n★開始: {event['message']}\n"    # is_sequence が False ならストリーミングトークンが続きとして出力されるので、先頭に改行コードを追加して、改行してからその続きを出力させる
             cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+            self.prev_content = content    # コンテンツを更新したら delete するために直前のメッセージを記憶しておく。エラーイベントとエンドイベントのときは更新しない。
             self.root_step.output = f"{event['role']}のタスクを開始します"
             cl.run_sync(self.root_step.update())    # エージェントのタスクが開始したら親ステップのメッセージを更新する
             time.sleep(3)
@@ -332,23 +351,31 @@ class ChainLitMessageUpdater(SessionEventHandler):
             if self.cur_step:
                 content = f"★進捗: {event['message']}\n" if is_sequence else f"\n★進捗: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+                self.prev_content = content
                 time.sleep(3)
         elif event_type == 'status':
             # ステータスメッセージを子ステップに表示
             if self.cur_step:
                 content = f"★ステータス: {event['message']}\n" if is_sequence else f"\n★ステータス: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+                self.prev_content = content
                 time.sleep(3)
         elif event_type == 'update_message':
             # メッセージの更新を子ステップに表示
             if self.cur_step:
                 content = f"★メッセージ更新: {event['message']}\n" if is_sequence else f"\n★メッセージ更新: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+                self.prev_content = content
                 time.sleep(3)
                 if event.get('is_end', False):
                     # メッセージ更新が終了した場合、ステップを終了
                     cl.run_sync(self.cur_step.__aexit__(None, None, None))
                     self.cur_step = None
+        elif event_type == 'prev_content_delete':
+            # 直前のコンテンツを削除する
+            if self.cur_step:
+                self.cur_step.output = self.cur_step.output[:-len(self.prev_content)]
+                cl.run_sync(self.cur_step.update())
         elif event_type == 'error':
             # エラーメッセージを子ステップに表示し、ステップを終了
             if self.cur_step:
@@ -372,6 +399,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
             if self.cur_step:
                 content = f"★その他のイベント: {event['message']}\n" if is_sequence else f"\n★その他のイベント: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
+                self.prev_content = content
                 time.sleep(3)
 
 

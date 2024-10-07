@@ -20,7 +20,7 @@ import os
 
 
 # backendディレクトリへのパスを追加
-# これをやらないと絶対インポートでモジュールを読み込むことができなかった
+# 全てのディレクトリに__init__.pyファイルを配置し、以下をやらないと絶対インポートでモジュールを読み込むことができなかった
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 
