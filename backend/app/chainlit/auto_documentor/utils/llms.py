@@ -64,17 +64,11 @@ def call_model(prompt: list, model: str, max_retries: int = 2, response_format: 
     # llm = ChatOpenRouter(model_name=model, max_retries=max_retries, model_kwargs=model_kwargs)
     llm = ChatGoogleGenerativeAI(model=model, max_retries=max_retries, model_kwargs=model_kwargs)
 
-    system_prompt = "あなたはとても賢いAIアシスタントです。"
-    message = [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=lc_messages)
-        ]
-
     # 「StrOutputParser」は、文字列として出力するパーサーです。
     parser = StrOutputParser()
 
     chain = llm | parser
 
-    response = chain.invoke(message)
+    response = chain.invoke(lc_messages)
 
     return response

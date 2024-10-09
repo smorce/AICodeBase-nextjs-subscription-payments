@@ -5,6 +5,7 @@ import os
 
 def setup_paths():
     # 現在のファイルのディレクトリを取得
+    # os.getcwd() ではエラーになる
     current_dir = os.path.dirname(os.path.abspath(__file__))
 
     # プロジェクトのルートディレクトリを計算

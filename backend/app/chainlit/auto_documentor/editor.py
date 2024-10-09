@@ -64,8 +64,9 @@ class EditorAgent:
 
         print_agent_output(f"Planning an outline layout based on initial research...", agent="EDITOR")
         response = call_model(prompt=prompt, model=self.task.get("model"), response_format="json")
-        print("デバッグ。JSON形式か？ Gemini は JSON モードをサポートしていないので、ココがあやしい。response ↓")    # やっぱりココでコケている
-        print(response)
+        # print("デバッグ。JSON形式か？ Gemini は JSON モードをサポートしていないので、ココがあやしい。response ↓")    # やっぱりココでコケている
+        # print(response)
+        # → Gemini は JSON モードをサポートしていないけど {"type": "json_object"} を指定してもエラーにならないし、ちゃんと JSON データで返してきたので問題なし
 
         # 正規表現を使って{}の中身を抽出する
         match = re.search(r'\{.*\}', response, re.DOTALL)
