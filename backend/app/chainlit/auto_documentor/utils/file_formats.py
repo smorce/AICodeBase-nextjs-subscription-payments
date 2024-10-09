@@ -52,13 +52,7 @@ async def write_md_to_pdf(text: str, path: str) -> str:
     """
     task = uuid.uuid4().hex
     file_path = f"{path}/{task}.pdf"
-
-
-    # 現在のスクリプトのディレクトリを取得
-    script_dir = os.getcwd()
-    # pdf_styles.css のパスを生成
-    pdf_styles_path = os.path.join(script_dir, 'pdf_styles.css')
-
+    pdf_styles_path = os.path.join(os.getcwd(), 'app', 'chainlit', 'auto_documentor', 'utils', 'pdf_styles.css')
 
     try:
         md2pdf(file_path,

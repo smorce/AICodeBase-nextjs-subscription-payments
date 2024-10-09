@@ -15,7 +15,7 @@ try:
     # どうやっても相対インポートが無理だった。Dockerファイルでパスを通したりしないとダメか？
     from app.chainlit.auto_documentor.researcher import ResearchAgent
     from app.chainlit.auto_documentor.reviewer import ReviewerAgent
-    from app.chainlit.auto_documentor.writer import WriterAgent
+    from app.chainlit.auto_documentor.reviser import ReviserAgent
 except ImportError as e:
     print(f"必要なライブラリをインポートできませんでした: {e}")
     import sys
@@ -64,7 +64,7 @@ class EditorAgent:
 
         print_agent_output(f"Planning an outline layout based on initial research...", agent="EDITOR")
         response = call_model(prompt=prompt, model=self.task.get("model"), response_format="json")
-        # print("デバッグ。JSON形式か？ Gemini は JSON モードをサポートしていないので、ココがあやしい。response ↓")    # やっぱりココでコケている
+        # print("デバッグ。JSON形式か？ Gemini は JSON モードをサポートしていないので、ココがあやしい。response ↓")
         # print(response)
         # → Gemini は JSON モードをサポートしていないけど {"type": "json_object"} を指定してもエラーにならないし、ちゃんと JSON データで返してきたので問題なし
 
