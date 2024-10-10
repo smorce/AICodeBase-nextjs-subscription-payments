@@ -111,7 +111,7 @@ def elem(name: str, cls: str = "", attr: Dict[str, str] = {}, **attr_dic: str):
     指定されたHTML要素を生成する関数です。
 
     Parameters:
-        name (str): 生成するHTML要素の名前。
+        name (str): 生成するHTML要素の名前。 div や span など。
         cls (str): 要素に適用するクラス名。省略可能。
         attr (Dict[str, str]): 属性とその値を持つ辞書。省略可能。
         **attr_dic (str): 任意の数の追加属性をキーワード引数として受け取ります。
@@ -136,6 +136,14 @@ def elem(name: str, cls: str = "", attr: Dict[str, str] = {}, **attr_dic: str):
 
         Returns:
             str: 完全なHTML要素を表す文字列。
+
+        例:
+        f"<{name}{attr_str}>{children_str}</{name}>" は
+            name         → div
+            attr_str     → class="tw-atta-key"
+            children_str → Plan
+        になる。
+
         """
         children_str = "".join(children)
         return f"<{name}{attr_str}>{children_str}</{name}>"
@@ -163,6 +171,11 @@ def txt(content: str, br: bool = True):
 div = functools.partial(elem, "div")
 span = functools.partial(elem, "span")
 blinking_cursor = span("tw-end-cursor")()
+
+# div の使い方の例
+# div("tw-atta-key")("Plan") とすると
+# <div class="tw-atta-key">Plan</div> が出力される。つまり、div で囲むための関数。
+
 
 def is_link_clickable(url: str) -> bool:
     """
