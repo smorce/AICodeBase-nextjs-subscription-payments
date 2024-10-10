@@ -3,11 +3,62 @@ from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
 import asyncio
 import time
+import functools
 from web_search import WebSearch
 
 """
 LangChain のコールバックを使わずに Python の標準機能でコールバックとイベントハンドラーを実装
 """
+
+# こちらのコードはHTML要素を動的に生成するためのヘルパー関数と、特定のHTMLタグに関するショートカットを定義しています。
+def elem(name: str, cls: str = "", attr: Dict[str, str] = {}, **attr_dic: str):
+    """
+    指定されたHTML要素を生成する関数です。
+
+    Parameters:
+        name (str): 生成するHTML要素の名前。 div や span など。
+        cls (str): 要素に適用するクラス名。省略可能。
+        attr (Dict[str, str]): 属性とその値を持つ辞書。省略可能。
+        **attr_dic (str): 任意の数の追加属性をキーワード引数として受け取ります。
+
+    Returns:
+        function: 子要素を引数として受け取り、完全なHTML要素を文字列として返す関数。
+    """
+    all_attr = {**attr, **attr_dic}
+    if cls:
+        all_attr.update({"class": cls})
+
+    attr_str = ""
+    if len(all_attr) > 0:
+        attr_str += "".join(f' {k}="{v}"' for k, v in all_attr.items())
+
+    def inner(*children: str):
+        """
+        生成したHTML要素の子要素を設定する内部関数。
+
+        Parameters:
+            *children (str): 子要素の内容。
+
+        Returns:
+            str: 完全なHTML要素を表す文字列。
+
+        例:
+        f"<{name}{attr_str}>{children_str}</{name}>" は
+            name         → div
+            attr_str     → class="tw-atta-key"
+            children_str → Plan
+        になる。
+
+        """
+        children_str = "".join(children)
+        return f"<{name}{attr_str}>{children_str}</{name}>"
+
+    return inner
+
+
+div = functools.partial(elem, "div")
+span = functools.partial(elem, "span")
+
 
 # イベントハンドラーの基底クラス
 class SessionEventHandler:
@@ -333,6 +384,31 @@ class ChainLitMessageUpdater(SessionEventHandler):
             # ステータスメッセージを子ステップに表示
             if self.cur_step:
                 content = f"★ステータス: {event['message']}\n" if is_sequence else f"\n★ステータス: {event['message']}\n"
+                if '[doing]' in event['message']:
+                    content = event['message'].replace('[doing]','')
+                    content = span("task-item pending")(content)
+                elif '[done]' in event['message']:
+                    if self.prev_content:
+                        """
+                        # pending だったタスクが completed になっているはずなので、ステータスをアップデートする
+                        # step1: 消す
+                        self.cur_step.output = self.cur_step.output[:-len(self.prev_content)]
+                        # step2: completed に変更する。念の為 self.prev_content は上書きせず別の変数を使う
+                        prev_content = self.prev_content.replace('pending','completed')
+                        # step3: completed に変えたものを追加してアップデートする
+                        self.cur_step.output += prev_content
+                        cl.run_sync(self.cur_step.update())
+                        # step4: 特殊トークンを削除して新しいタスクを追加
+                        content = event['message'].replace('[done]','')
+                        content = span("task-item completed")(content)                        
+                        """
+                        # 上記の処理をもっとシンプルにした
+                        # pending だった一個前のタスクを削除する
+                        self.cur_step.output = self.cur_step.output[:-len(self.prev_content)]
+                        cl.run_sync(self.cur_step.update())
+                        # 特殊トークンを削除して新しいタスクを追加
+                        content = event['message'].replace('[done]','')
+                        content = span("task-item completed")(content)
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
                 self.prev_content = content
         elif event_type == 'update_message':

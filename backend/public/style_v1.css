@@ -190,3 +190,40 @@ span.tw-end-cursor::after {
   margin: auto;
   animation: tw-blinking-dot 0.7s ease-in-out infinite;
 }
+
+.task-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  /* font-size: 14px; */
+}
+
+.task-item::before {
+  content: '';
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  border-radius: 50%;
+}
+
+.task-item.completed::before {
+  content: '✓';
+  color: #3c3;
+  font-weight: bold;
+}
+
+.task-item.pending::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid #3794ff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

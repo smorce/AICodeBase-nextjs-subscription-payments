@@ -31,7 +31,7 @@ if is_LangSmith:
 load_dotenv()
 
 # モジュールをインポートするためにパスの追加が必要。これを入れてもカレントディレクトリは変わらない。
-# 以下は書くファイルで必要
+# 以下は各ファイルで必要
 from path_setup import setup_paths
 setup_paths()
 
@@ -184,7 +184,7 @@ class WebSearch():
             # -----------------------------------------------------
             with open(task_json_path, 'r') as f:
                 # これはリサーチャー以外のマルチエージェントで使う LLM                
-                task = json.load(f)    # ★これも環境変数から読み込もうと思ったけど、環境変数に書く内容はAPIキーに絞った方が良さそう。jsonファイルのままルートディレクトリに移動させたい。
+                task = json.load(f)       # ★これも環境変数から読み込もうと思ったけど、環境変数に書く内容はAPIキーに絞った方が良さそう。jsonファイルのままルートディレクトリに移動させたい。
 
             task["query"] = self.query    # ★ここは Chainlit の user_input にした
             self.task = task
@@ -362,6 +362,12 @@ class WebSearch():
             post_proxy.prev_content_delete()
             post_proxy.update_status("上書きしました！")
             time.sleep(6)
+            post_proxy.update_status("[doing]タスクAAAAAA")
+            time.sleep(6)
+            post_proxy.update_status("[done]タスクAAAAAA")
+            post_proxy.update_status("[doing]タスクBBBBBB")
+            time.sleep(6)
+            post_proxy.update_status("[done]タスクBBBBBB")
 
 
             # ------------------------------------
