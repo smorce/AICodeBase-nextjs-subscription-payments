@@ -191,6 +191,7 @@ span.tw-end-cursor::after {
   animation: tw-blinking-dot 0.7s ease-in-out infinite;
 }
 
+/* 追加 */
 .task-item {
   display: flex;
   align-items: center;

@@ -406,7 +406,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
                         # pending だった一個前のタスクを削除する
                         self.cur_step.output = self.cur_step.output[:-len(self.prev_content)]
                         cl.run_sync(self.cur_step.update())
-                        # 特殊トークンを削除して新しいタスクを追加
+                        # 特殊トークン[done] を削除して新しいタスクを追加
                         content = event['message'].replace('[done]','')
                         content = span("task-item completed")(content)
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))

@@ -25,9 +25,6 @@
 - GPTリサーチャーを組み込む
   - PowerPointDesignerAgent
     - 最新のマークダウンファイルをパワポ化しているが、複数のユーザーが同時にサービスを使う場合おかしくなるので、ResearchState に対象のファイル名を記録しておく
-  - utils/llms.py
-    - Gemini は JSON モードをサポートしていないので、おかしければ元に戻す
-  - モジュールのインポートパスは大丈夫か？
 - gpt_researcher/llm_provider/__init__.py
   - openrouter を使っていないけど、ここで読み込んでエラーが出るので API キーを設定した（init から消せばエラーは出ないはずだけど、再度使うかもしれないので一応残しておく）
 - "max_sections": 3
