@@ -17,7 +17,8 @@
     - リフレッシュトークンまでは実装していないので 優先度の低い to do としてメモしておく
 - カスタムコールバックハンドラーは AsyncCallbackHandler が正しい？？ 一応 ちゃんと動いている
   - https://python.langchain.com/docs/how_to/callbacks_async/
-
+- [Mem]Gemini API で structured outputs を使い、Steps と FinalAnswer を出力する
+  - プランニングプロンプトのアップデート案
 
 
 
