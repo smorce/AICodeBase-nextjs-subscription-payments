@@ -167,7 +167,7 @@ class PostEventProxy:
         self.is_sequence = is_sequence
         self.message_is_end = False
         # 初期化時にstartイベントを発行
-        self.start(f"{self.role_name} の処理を開始します。")
+        self.start(f"{self.role_name} の処理を開始します")
 
     def start(self, message: str):
         """
@@ -369,7 +369,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
             # 子ステップを開始（ネスト）
             self.cur_step = cl.Step(name=event['role'], show_input=True)
             cl.run_sync(self.cur_step.__aenter__())
-            content = f"★開始: {event['message']}\n" if is_sequence else f"\n★開始: {event['message']}\n"    # is_sequence が False ならストリーミングトークンが続きとして出力されるので、先頭に改行コードを追加して、改行してからその続きを出力させる
+            content = f"🟢 {event['message']}\n" if is_sequence else f"\n🟢 {event['message']}\n"    # is_sequence が False ならストリーミングトークンが続きとして出力されるので、先頭に改行コードを追加して、改行してからその続きを出力させる
             cl.run_sync(self.cur_step.stream_token(content, is_sequence))
             self.prev_content = content    # コンテンツを更新したら delete するために直前のメッセージを記憶しておく。エラーイベントとエンドイベントのときは更新しない。
             self.root_step.output = f"{event['role']}のタスクを開始します"
@@ -377,13 +377,13 @@ class ChainLitMessageUpdater(SessionEventHandler):
         elif event_type == 'progress':
             # 進捗状況を子ステップに表示
             if self.cur_step:
-                content = f"★進捗: {event['message']}\n" if is_sequence else f"\n★進捗: {event['message']}\n"
+                content = f"🛠️ {event['message']}\n" if is_sequence else f"\n🛠️ {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
                 self.prev_content = content
         elif event_type == 'status':
             # ステータスメッセージを子ステップに表示
             if self.cur_step:
-                content = f"★ステータス: {event['message']}\n" if is_sequence else f"\n★ステータス: {event['message']}\n"
+                content = f"ステータス: {event['message']}\n" if is_sequence else f"\nステータス: {event['message']}\n"
                 if '[doing]' in event['message']:
                     content = event['message'].replace('[doing]','')
                     content = span("task-item pending")(content)
@@ -414,7 +414,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
         elif event_type == 'update_message':
             # メッセージの更新を子ステップに表示
             if self.cur_step:
-                content = f"★メッセージ更新: {event['message']}\n" if is_sequence else f"\n★メッセージ更新: {event['message']}\n"
+                content = f"メッセージ更新: {event['message']}\n" if is_sequence else f"\nメッセージ更新: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
                 self.prev_content = content
                 if event.get('is_end', False):
@@ -429,14 +429,14 @@ class ChainLitMessageUpdater(SessionEventHandler):
         elif event_type == 'error':
             # エラーメッセージを子ステップに表示し、ステップを終了
             if self.cur_step:
-                content = f"★エラー: {event['message']}\n" if is_sequence else f"\n★エラー: {event['message']}\n"
+                content = f"❌ {event['message']}\n" if is_sequence else f"\n❌ {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
                 cl.run_sync(self.cur_step.__aexit__(None, None, None))
                 self.cur_step = None
         elif event_type == 'end':
             # 処理完了メッセージを子ステップに表示し、ステップを終了。親ステップの表示も更新する
             if self.cur_step:
-                content = f"★終了: {event['message']}\n" if is_sequence else f"\n★終了: {event['message']}\n"
+                content = f"✅ {event['message']}\n" if is_sequence else f"\n✅ {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
                 cl.run_sync(self.cur_step.__aexit__(None, None, None))
                 self.cur_step = None
@@ -445,7 +445,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
         else:
             # その他のイベント
             if self.cur_step:
-                content = f"★その他のイベント: {event['message']}\n" if is_sequence else f"\n★その他のイベント: {event['message']}\n"
+                content = f"その他のイベント: {event['message']}\n" if is_sequence else f"\nその他のイベント: {event['message']}\n"
                 cl.run_sync(self.cur_step.stream_token(content, is_sequence))
                 self.prev_content = content
 

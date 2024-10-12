@@ -1,6 +1,7 @@
 import os
 from utils.views import print_agent_output
 from utils.file_formats import write_md_to_ppt
+from utils.llms import call_model
 
 
 # ------------------------------------------------------------
@@ -300,7 +301,6 @@ class PowerPointDesignerAgent:
             return None
 
         # ファイルの最終更新時刻を取得し、最新のものを見つける
-        # ★ココは修正
         latest_file = max(files, key=lambda x: os.path.getmtime(os.path.join(directory, x)))
 
         # 最新のマークダウンファイルのパス
@@ -312,19 +312,100 @@ class PowerPointDesignerAgent:
 
         return content
 
+
+    def convertToMarpContent(self, md_content):
+
+        prompt = [{
+            "role": "system",
+            "content": "あなたは構造化された文章を Marp 形式にコンバートするプログラムです。"
+        }, {
+            "role": "user",
+            "content": f"""以下の構造化された文章を Marp のスライド形式に変換してください。各セクションをスライドに分け、適切な見出しや箇条書きを使用してください。
+
+### 構造化された文章 ###
+{md_content}
+
+### Marp 形式への変換例 ###
+
+```markdown
+---
+marp: true
+title: プレゼンテーションのタイトル
+author: あなたの名前
+date: 2024年4月27日
+theme: default
+paginate: true
+---
+
+# セクション1: はじめに
+
+- ポイント1
+- ポイント2
+- ポイント3
+
+---
+
+# セクション2: 背景
+
+## サブセクション1
+
+- 詳細1
+- 詳細2
+
+---
+
+## サブセクション2
+
+- 詳細1
+- 詳細2
+
+---
+
+# セクション3: 方法論
+
+1. ステップ1
+2. ステップ2
+3. ステップ3
+
+---
+
+# セクション4: 結果
+
+- 結果1
+- 結果2
+- 結果3
+
+---
+
+# セクション5: 結論
+
+- 要点1
+- 要点2
+- 今後の展望
+```
+
+### 回答 ###"""
+        }]
+
+        marp_content = call_model(prompt=prompt, model="gemini-1.5-pro-002")
+
+        return marp_content
+
+
     async def write_report_by_formats(self, md_content, output_dir):
-        await write_md_to_ppt(md_content, output_dir)           # ★Marpで実装した。他の関数と合わせて非同期にした。
+        await write_md_to_ppt(md_content, output_dir)           # Marpで実装した。他の関数と合わせて非同期にした。
 
 
     async def run(self, post_proxy: PostEventProxy):
         print_agent_output(f"パワーポイントを作成中...", agent="POWERPOINTDESIGNER")
-        post_proxy.progress(
-            message=f"PowerPointDesignerAgent: パワーポイントを作成中…\n"
-        )
+        post_proxy.update_status("[doing]PowerPointDesignerAgent📰: Pptx を作成する")
 
         # mdファイルを開いて内容を読み込む
         md_content = self.load_latest_markdown(self.output_dir)
-        # パワーポイントを作成して保存する
-        await self.write_report_by_formats(md_content, self.output_dir)
+        # mdファイルを Marp 用コンテンツにコンバートする
+        marp_content = self.convertToMarpContent(md_content)
+        # Pptx を作成して保存する
+        await self.write_report_by_formats(marp_content, self.output_dir)
+        post_proxy.update_status("[done]PowerPointDesignerAgent📰: Pptx を作成する")
 
         return post_proxy

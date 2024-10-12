@@ -52,13 +52,11 @@ class PublisherAgent:
 
     async def run(self, research_state: dict):
         task = research_state.get("task")
-        post_proxy = research_state.get("post_proxy")          # 追加
-        # 追加
-        post_proxy.progress(
-            message=f"PublisherAgent: 最終レポートを PDF、Docx、Markdown などのマルチフォーマットで公開します…\n"
-        )
-
+        post_proxy = research_state.get("post_proxy")
+        post_proxy.update_status("[doing]PublisherAgent📢: 最終レポートを PDF、Docx、Markdown のマルチフォーマットで作成する")
         publish_formats = task.get("publish_formats")
         print_agent_output(output="Publishing final research report based on retrieved data...", agent="PUBLISHER")
         final_research_report = await self.publish_research_report(research_state, publish_formats)
+        post_proxy.update_status("[done]PublisherAgent📢: 最終レポートを PDF、Docx、Markdown のマルチフォーマットで作成する")
+        
         return {"report": final_research_report, "post_proxy": post_proxy}

@@ -362,9 +362,9 @@ class WebSearch():
             # -----------------------------------------------------
             with open(task_json_path, 'r') as f:
                 # これはリサーチャー以外のマルチエージェントで使う LLM                
-                task = json.load(f)       # ★これも環境変数から読み込もうと思ったけど、環境変数に書く内容はAPIキーに絞った方が良さそう。jsonファイルのままルートディレクトリに移動させたい。
+                task = json.load(f)
 
-            task["query"] = self.query    # ★ここは Chainlit の user_input にした
+            task["query"] = self.query  # user_input
             self.task = task
             
             self.output_dir = os.path.join(os.getcwd(), '.files', self.event_emitter.current_round_id, task.get('query')[0:40])
@@ -514,13 +514,12 @@ class WebSearch():
 
 
         try:
-            print("デバッグ：コンパイルします！")
-            print("デバッグ2　リサーチチーム：", research_team)
+
+            post_proxy.update_status("[doing]リサーチチームをコンパイルする")
 
             # グラフをコンパイルする
             chain = research_team.compile()
-            print("デバッグ：コンパイル完了！")
-            post_proxy.update_status("コンパイル完了だぜ！！！！")
+            post_proxy.update_status("[done]リサーチチームをコンパイルする")
 
 
             print_agent_output(f"Starting the research process for query '{self.task.get('query')}'...", "MASTER")
@@ -533,34 +532,26 @@ class WebSearch():
                 # → かなり複雑化するのでやめた方が良い。新しいステップが開始する見え方も不自然なので。実装したけど、基本的に 途中で override_sequence_temporarily(True) する処理は使わないようにする。
                 # post_proxy.progress("デバッグ 一時的に is_sequence を True にして上書きする 1")
                 # post_proxy.update_status("デバッグ 一時的に is_sequence を True にして上書きする 2")
+                
                 # ↓ もっと簡単に実装した。直前のコンテンツを削除して続きを生成する
-            time.sleep(6)
-            post_proxy.progress("prev_content_delete で 'この文章' を削除します")
-            time.sleep(6)
-            post_proxy.prev_content_delete()
-            post_proxy.update_status("上書きしました！")
-            time.sleep(6)
-            post_proxy.update_status("[doing]AAAAAA をする")
-            time.sleep(6)
-            post_proxy.update_status("[done]AAAAAA をする")
-            post_proxy.update_status("[doing]BBBBBBB をする")
-            time.sleep(6)
-            post_proxy.update_status("[done]BBBBBBB をする")
+
+            # time.sleep(6)
+            # post_proxy.progress("prev_content_delete で 'この文章' を削除します")
+            # time.sleep(6)
+            # post_proxy.prev_content_delete()
+            # post_proxy.update_status("上書きしました！")
+
 
 
             # ------------------------------------
 
             # 非同期処理を実行
-            print("デバッグ：リサーチします！")
+            print_agent_output("デバッグ：リサーチします！", "MASTER")
             result = run_async_in_loop(async_research(chain, self.task, post_proxy))
-            print("デバッグ：リサーチ完了！")
+            print_agent_output("デバッグ：リサーチ完了！", "MASTER")
 
             # print("result に何が入っている？？")
             # print(result)
-
-            # post_proxy のアップデート
-            # post_proxy = result.get("post_proxy")   ← 参照なのでこれは不要かも。★ 一旦消してみておかしかったら復活させる
-
 
 
             async def async_powerpointdesigner(powerpointdesigner, post_proxy):

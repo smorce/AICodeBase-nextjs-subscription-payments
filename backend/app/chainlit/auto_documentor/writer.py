@@ -60,8 +60,9 @@ class WriterAgent:
         response = call_model(prompt, task.get("model"), max_retries=2, response_format='json')
         # return json.loads(response)
 
-        print("write_sections のデバッグ。JSON形式か？？  response")
-        print(response)
+        # print("write_sections のデバッグ。JSON形式か？？  response")
+        # print(response)
+        # → JSON になっていた
 
         # 正規表現を使って{}の中身を抽出する
         match = re.search(r'\{.*\}', response, re.DOTALL)
@@ -98,14 +99,13 @@ Headers Data: {headers}\n
         return {"headers": json.loads(response)}
 
     def run(self, research_state: dict):
-        post_proxy = research_state.get("post_proxy")          # 追加
-        # 追加
-        post_proxy.progress(
-            message=f"EditorAgent: 与えられた調査結果からの序論、結論、参考文献のセクションを含む最終レポートを編集中…\n"
-        )
+        post_proxy = research_state.get("post_proxy")
+
+        post_proxy.update_status("[doing]EditorAgent: 与えられた調査結果からの序論、結論、参考文献のセクションを含む最終レポートを編集する")
 
         print_agent_output(f"Writing final research report based on research data...", agent="WRITER")
         research_layout_content = self.write_sections(research_state)
+        post_proxy.update_status("[done]EditorAgent: 与えられた調査結果からの序論、結論、参考文献のセクションを含む最終レポートを編集する")
 
         if research_state.get("task").get("verbose"):
             print_agent_output(research_layout_content, agent="WRITER")

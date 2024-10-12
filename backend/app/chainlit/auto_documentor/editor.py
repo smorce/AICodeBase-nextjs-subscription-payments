@@ -34,15 +34,10 @@ class EditorAgent:
         """
 
         initial_research = research_state.get("initial_research")
-        post_proxy       = research_state.get("post_proxy")          # 追加
+        post_proxy       = research_state.get("post_proxy")
         max_sections     = self.task.get("max_sections")
-        # 追加
-        post_proxy.progress(
-            message=f"EditorAgent: 初期調査に基づいてレポートの概要と構成を計画中…\n"
-        )
-        post_proxy.progress(
-            message=f"初期調査を表示してみる\n\n{initial_research}"
-        )
+
+        post_proxy.update_status("[doing]EditorAgent✍🏻: 初期調査に基づいてレポートの概要と構成を計画する")
 
         prompt = [{
             "role": "system",
@@ -79,11 +74,13 @@ class EditorAgent:
         else:
             print("plan_research: JSON形式のデータが見つかりませんでした。")
 
+        post_proxy.update_status("[done]EditorAgent✍🏻: 初期調査に基づいてレポートの概要と構成を計画する")
+
         return {
             "title": plan.get("title"),
             "date": plan.get("date"),
             "sections": plan.get("sections"),
-            "post_proxy": post_proxy                  # 追加
+            "post_proxy": post_proxy,
         }
 
     async def run_parallel_research(self, research_state: dict):
@@ -99,18 +96,10 @@ class EditorAgent:
         reviser_agent  = ReviserAgent()
         # --------------------------------------------
         queries = research_state.get("sections")           # サブトピック(アウトライントピック)のリスト。ちゃんと3つになっていた
-        title = research_state.get("title")
-        post_proxy = research_state.get("post_proxy")      # 追加
-        # 追加
-        post_proxy.progress(
-            message=f"EditorAgent: 各アウトライントピックについて並行してリサーチ中…\n"
-        )
-        post_proxy.progress(
-            message=f"サブトピック(アウトライントピック)のリストを出してみる。これがおかしい気がする: {queries}"
-        )
-        post_proxy.progress(
-            message=f"これは初期計画及びレポートのタイトル: {title}"
-        )
+        title = research_state.get("title")                # これは初期計画及びレポートのタイトルになる
+        post_proxy = research_state.get("post_proxy")
+
+        post_proxy.update_status("[doing]EditorAgent✍🏻: 各アウトライントピックについて並行してリサーチする")
 
         workflow = StateGraph(DraftState)
 
@@ -136,6 +125,8 @@ class EditorAgent:
                         for query in queries]
         # asyncio.gather なので全部のタスクが終了するまで次には行かない
         research_results = [result['draft'] for result in await asyncio.gather(*final_drafts)]
+
+        post_proxy.update_status("[done]EditorAgent✍🏻: 各アウトライントピックについて並行してリサーチする")
 
         # リターンするときに、ResearchState に対応する Kye の Value が更新される
         return {"research_data": research_results, "post_proxy":post_proxy}

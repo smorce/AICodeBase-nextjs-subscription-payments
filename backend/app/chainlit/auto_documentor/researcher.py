@@ -34,13 +34,18 @@ class ResearchAgent:
     async def run_initial_research(self, research_state: dict):
         task       = research_state.get("task")
         query      = task.get("query")
-        post_proxy = research_state.get("post_proxy")    # ★ post_proxy も受け取るようにした
+        post_proxy = research_state.get("post_proxy")
         print_agent_output(f"Running initial research on the following query: {query}", agent="RESEARCHER")
-        # 追加
+
+        post_proxy.update_status("[doing]ResearchAgent👨🏻‍💻: 初期調査を実施する")
+        initial_research = await self.research(query=query, verbose=task.get("verbose"))
+        post_proxy.update_status("[done]ResearchAgent👨🏻‍💻: 初期調査を実施する")
+     
         post_proxy.progress(
-            message=f"ResearchAgent: 初期計画を立案中…\n"
+            message=f"初期調査結果を表示します\n\n{initial_research}"
         )
-        return {"task": task, "initial_research": await self.research(query=query, verbose=task.get("verbose")), "post_proxy": post_proxy}
+
+        return {"task": task, "initial_research": initial_research, "post_proxy": post_proxy}
 
     async def run_depth_research(self, draft_state: dict):
         """サブトピックの調査"""
