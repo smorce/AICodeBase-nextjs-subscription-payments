@@ -515,11 +515,11 @@ class WebSearch():
 
         try:
 
-            post_proxy.update_status("[doing]リサーチチームをコンパイルする")
+            post_proxy.update_status("[doing]リサーチチームを編成する")
 
             # グラフをコンパイルする
             chain = research_team.compile()
-            post_proxy.update_status("[done]リサーチチームをコンパイルする")
+            post_proxy.update_status("[done]リサーチチームを編成する")
 
 
             print_agent_output(f"Starting the research process for query '{self.task.get('query')}'...", "MASTER")
