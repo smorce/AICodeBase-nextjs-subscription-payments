@@ -1,6 +1,6 @@
 import os
 from utils.views import print_agent_output
-from utils.file_formats import write_md_to_ppt
+from utils.file_formats import write_to_file, write_md_to_ppt
 from utils.llms import call_model
 
 
@@ -317,13 +317,47 @@ class PowerPointDesignerAgent:
 
         prompt = [{
             "role": "system",
-            "content": "あなたは構造化された文章を Marp 形式にコンバートするプログラムです。"
+            "content": "あなたは構造化された文章を Marp 形式にコンバートするプログラムです。余計なことは言わずにコンバートした結果だけ出力してください。"
         }, {
             "role": "user",
-            "content": f"""以下の構造化された文章を Marp のスライド形式に変換してください。各セクションをスライドに分け、適切な見出しや箇条書きを使用してください。
+            "content": f"""以下の構造化された文章を Marp のスライド形式に変換してください。各セクションをスライドに分け、適切な見出しや箇条書きを使用してください。各ページには 第2レベルの見出し を1つ, 第3レベルの見出し を2つ, 箇条書き を2つ まで含めることができます。この仕様に収まりきらない場合は「Table of Contents (Slide 1/N), Table of Contents (Slide 2/N), …… , References (Slide 1/N), References (Slide 2/N), ……」のように複数のページに分割してください。各ページのフォーマットは次の通りです。
+
+```各ページのフォーマット
+第2レベルの見出し（##）
+
+第3レベルの見出し1（###）
+
+* 箇条書き1
+* 箇条書き2
+
+第3レベルの見出し2（###）
+
+* 箇条書き1
+* 箇条書き2
+```
+
+スライドは以下の書き出しから始めてください。
+```
+---
+marp: true
+title: [プレゼンテーションのタイトル]
+author: [著者]
+date: [日付]
+theme: default
+paginate: true
+---
+
+# タイトル
+### 日付
+
+---
+```
 
 ### 構造化された文章 ###
+
+```markdown
 {md_content}
+```
 
 ### Marp 形式への変換例 ###
 
@@ -337,6 +371,11 @@ theme: default
 paginate: true
 ---
 
+# タイトル
+### 日付
+
+---
+
 # セクション1: はじめに
 
 - ポイント1
@@ -345,7 +384,15 @@ paginate: true
 
 ---
 
-# セクション2: 背景
+# セクション2: エグゼクティブサマリー
+
+- ポイント1
+- ポイント2
+- ポイント3
+
+---
+
+# セクション3: 背景
 
 ## サブセクション1
 
@@ -361,7 +408,7 @@ paginate: true
 
 ---
 
-# セクション3: 方法論
+# セクション4: 方法論
 
 1. ステップ1
 2. ステップ2
@@ -369,7 +416,7 @@ paginate: true
 
 ---
 
-# セクション4: 結果
+# セクション5: 結果
 
 - 結果1
 - 結果2
@@ -377,7 +424,7 @@ paginate: true
 
 ---
 
-# セクション5: 結論
+# セクション6: 結論
 
 - 要点1
 - 要点2
@@ -404,6 +451,8 @@ paginate: true
         md_content = self.load_latest_markdown(self.output_dir)
         # mdファイルを Marp 用コンテンツにコンバートする
         marp_content = self.convertToMarpContent(md_content)
+        # Marp コンテンツを保存する
+        await write_to_file(os.path.join(self.output_dir, 'marp_content.md'), marp_content)
         # Pptx を作成して保存する
         await self.write_report_by_formats(marp_content, self.output_dir)
         post_proxy.update_status("[done]PowerPointDesignerAgent📰: Pptx を作成する")

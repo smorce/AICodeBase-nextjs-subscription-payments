@@ -121,7 +121,7 @@ async def write_md_to_ppt(text: str, path: str) -> str:
     file_path = f"{path}/{task}.pptx"
 
 
-    def generate_slides(markdown_content, output_path):
+    def generate_slides(markdown_content, output_path, format='pptx'):
         """
         Marp CLIを使用してMarkdownファイルからスライドを生成する。
 
@@ -138,7 +138,7 @@ async def write_md_to_ppt(text: str, path: str) -> str:
                 tmp.close()
 
                 # Marp CLIを呼び出してpptxを生成
-                command = ['marp', tmp_path, '-o', output_path]
+                command = ['marp', tmp_path, f'--{format}', '-o', output_path]
                 # subprocess.run を使用してコマンドを実行
                 subprocess.run(command, check=True)
                 # 一時ファイルを削除
