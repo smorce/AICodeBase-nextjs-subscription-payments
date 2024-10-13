@@ -435,6 +435,7 @@ paginate: true
         }]
 
         marp_content = call_model(prompt=prompt, model="gemini-1.5-pro-002")
+        marp_content = marp_content.replace("```markdown\n","").replace("```","")
 
         return marp_content
 
