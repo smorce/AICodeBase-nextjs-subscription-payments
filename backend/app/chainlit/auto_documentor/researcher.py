@@ -37,9 +37,9 @@ class ResearchAgent:
         post_proxy = research_state.get("post_proxy")
         print_agent_output(f"Running initial research on the following query: {query}", agent="RESEARCHER")
 
-        post_proxy.update_status("[doing]ResearchAgent👨🏻‍💻: 初期調査を実施する")
+        post_proxy.update_status("[doing]ResearchAgent🔎: 初期調査を実施する")
         initial_research = await self.research(query=query, verbose=task.get("verbose"))
-        post_proxy.update_status("[done]ResearchAgent👨🏻‍💻: 初期調査を実施する")
+        post_proxy.update_status("[done]ResearchAgent🔎: 初期調査を実施する")
      
         post_proxy.progress(
             message=f"初期調査結果を表示します\n\n{initial_research}"

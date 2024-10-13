@@ -515,11 +515,11 @@ class WebSearch():
 
         try:
 
-            post_proxy.update_status("[doing]リサーチチームを編成する")
+            post_proxy.update_status("[doing]Research Team🕵️‍♀️ を編成する")
 
             # グラフをコンパイルする
             chain = research_team.compile()
-            post_proxy.update_status("[done]リサーチチームを編成する")
+            post_proxy.update_status("[done]Research Team🕵️‍♀️ を編成する")
 
 
             print_agent_output(f"Starting the research process for query '{self.task.get('query')}'...", "MASTER")
@@ -597,7 +597,7 @@ class WebSearch():
         post_proxy.end("リサーチプロセスは完了しました！ついでにレポートも作成しました！")
 
         # 最終的なレスポンスを返す
-        return f"round_id = {post_proxy.round_id}: {post_proxy.role_name} の処理が完了しました。"
+        return f"round_id = {post_proxy.round_id}: {post_proxy.role_name}🧑🏽‍💻 の処理が完了しました。"
 
 
 

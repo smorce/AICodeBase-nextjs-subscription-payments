@@ -360,7 +360,7 @@ class ChainLitMessageUpdater(SessionEventHandler):
         """        
         event_type  = event['type']
         is_sequence = event['is_sequence']
-        cl.run_sync(self.root_step.stream_token(f"親ステップに表示される内容です。{event['role']}が処理中……", True))   # 親ステップに表示される内容。ここの表示は上書きするようにする
+        cl.run_sync(self.root_step.stream_token(f"親ステップに表示される内容です。{event['role']}🧑🏽‍💻 が処理中……", True))   # 親ステップに表示される内容。ここの表示は上書きするようにする
 
 
         # イベントを受け取り、UIをリアルタイムで更新
