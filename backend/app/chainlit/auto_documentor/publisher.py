@@ -6,6 +6,7 @@ from utils.file_formats import \
     split_text_into_chunks
 from utils.views import print_agent_output
 from utils.llms import call_model
+import os
 import asyncio
 
 
@@ -53,7 +54,7 @@ class PublisherAgent:
             tasks = [translate_chunk(chunk, model) for chunk in chunks]
             translated_chunks = await asyncio.gather(*tasks)
         except Exception as e:
-            print(f"日本語翻訳でエラー(レートリミット制限など): {e}")
+            print(f"日本語翻訳でエラー(チャンクが多すぎるゆえのレートリミット制限など): {e}")
 
         # チャンクが空行から始まる場合、翻訳するとその空行が消えてしまうので、元のチャンクと比較して、元のチャンクが空行から始まり translated_chunks が空行から始まっていない場合は translated_chunks の冒頭に空行を追加する
         for i, (original_chunk, translated_chunk) in enumerate(zip(chunks, translated_chunks)):
