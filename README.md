@@ -71,7 +71,7 @@
 
 
 ## pending
-- レポートを日本語にした影響でPDFがおかしくなったが、ワードもあるので一旦保留
+- レポートを日本語にした影響で PDF がおかしくなったが、ワードもあるので一旦保留。ワードから手動で PDF にもできる
 
 
 
@@ -121,8 +121,10 @@ aicodebasse-frontend-container         | +schemas = ["public", "graphql_public"]
   - https://github.com/langchain-ai/langchain-google/issues/463
   - これは LangGraph のバグらしい。Gemini を使うと出る。問題があるわけではないので一旦保留。DuckDuckGoSearchResults のエラー？？
 - 本来は Gemini はシステムプロンプトがサポートされていないけど、ChatGoogleGenerativeAI はシステムプロンプトを入力してもOKな仕様。
+- tavily の回数
+  - Max セクション が 6 だと、一回のレポートで 86 回叩く
 
- 
+
 
 
 ## backend

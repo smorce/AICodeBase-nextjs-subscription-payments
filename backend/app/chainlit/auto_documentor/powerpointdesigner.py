@@ -2,6 +2,7 @@ import os
 from utils.views import print_agent_output
 from utils.file_formats import write_to_file, write_md_to_ppt
 from utils.llms import call_model
+import asyncio
 
 
 # ------------------------------------------------------------
@@ -451,6 +452,9 @@ paginate: true
         # mdファイルを開いて内容を読み込む
         md_content = self.load_latest_markdown(self.output_dir)
         # mdファイルを Marp 用コンテンツにコンバートする
+        # レートリミット制限対策
+        print("デバッグ 待ちの状態……")
+        await asyncio.sleep(500)
         marp_content = self.convertToMarpContent(md_content)
         # Marp コンテンツを保存する
         await write_to_file(os.path.join(self.output_dir, 'marp_content.md'), marp_content)

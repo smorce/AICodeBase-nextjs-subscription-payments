@@ -62,11 +62,15 @@ class PublisherAgent:
                 translated_chunks[i] = '\n' + translated_chunk
 
         # 翻訳されたチャンクを結合
-        if None not in translated_chunks:
-            translated_layout = "".join(translated_chunks)
-            layout = translated_layout
-        else:
-            pass  # None が含まれている場合は文章が日本語なので layout をそのまま使うため何もしない
+        translated_layout = ""
+        for chunk, translated_chunk in zip(chunks, translated_chunks):
+            if translated_chunk != "None":
+                # 翻訳した文章を結合
+                translated_layout += translated_chunk
+            else:
+                # translated_chunk が None の場合は文章が日本語なので layout をそのまま使う
+                translated_layout += chunk
+        layout = translated_layout
         # ------------------------------------------------
 
 
