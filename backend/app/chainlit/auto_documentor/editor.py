@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph, END
 import asyncio
 import json
 import re
+import chainlit as cl
 
 from path_setup import setup_paths
 setup_paths()
@@ -89,7 +90,7 @@ class EditorAgent:
         # サブグラフで動かすエージェント3つ
         ##### 研究者 (gpt-researcher) - サブトピックについて詳細な調査を行い、草稿を書きます。
         ##### レビュー担当者           - 一連の条件に基づいて下書きの正確性を検証し、フィードバックを提供します。
-        ##### 校閲者                  - 校閲者のフィードバックに基づいて満足のいく内容になるまで下書きを修正します。
+        ##### 校閲者                  - レビュー担当者のフィードバックに基づいて満足のいく内容になるまで下書きを修正します。
         # --------------------------------------------
         research_agent = ResearchAgent()
         reviewer_agent = ReviewerAgent()
@@ -99,22 +100,44 @@ class EditorAgent:
         title = research_state.get("title")                # これは初期計画及びレポートのタイトルになる
         post_proxy = research_state.get("post_proxy")
 
-        post_proxy.update_status("[doing]EditorAgent✍🏻: 各アウトライントピックについて並行してリサーチする")
+        post_proxy.update_status("[doing]ResearchAgent🔎 & ReviewerAgent📑 & ReviserAgent📜: 各アウトライントピックについて並行してリサーチする")
 
+        # 各エージェントの処理をラップする関数を定義
+        async def researcher_with_print(state):
+            post_proxy.progress("ResearchAgent🔎 の処理が開始しました。処理中です……")
+            result = await research_agent.run_depth_research(state)
+            post_proxy.progress(f"ResearchAgent🔎 の処理が完了しました。デバッグ 結果：{result['draft']}")
+            return result
+
+        def reviewer_with_print(state):
+            post_proxy.progress("ReviewerAgent📑 の処理が開始しました。処理中です……")
+            result = reviewer_agent.run(state)
+            post_proxy.progress(f"ReviewerAgent📑 の処理が完了しました。デバッグ 結果：{result['review']}")
+            return result
+
+        def reviser_with_print(state):
+            # reviewer の結果が None なら 校閲者 は呼び出されない
+            post_proxy.progress("ReviserAgent📜 の処理が開始しました。処理中です……")
+            result = reviser_agent.run(state)
+            post_proxy.progress(f"ReviserAgent📜 の処理が完了しました。デバッグ 結果：{result['draft']}, {result['revision_notes']}")
+            return result
+
+        # ワークフローを定義
         workflow = StateGraph(DraftState)
 
-        workflow.add_node("researcher", research_agent.run_depth_research)
-        workflow.add_node("reviewer", reviewer_agent.run)
-        workflow.add_node("reviser", reviser_agent.run)
+        # ラップした関数をノードとして追加
+        workflow.add_node("researcher", researcher_with_print)
+        workflow.add_node("reviewer", reviewer_with_print)
+        workflow.add_node("reviser", reviser_with_print)
 
         # set up edges researcher->reviewer->reviser->reviewer...
         workflow.set_entry_point("researcher")
         workflow.add_edge('researcher', 'reviewer')
-        workflow.add_edge('reviser', 'reviewer')
+        workflow.add_edge('reviser', 'reviewer')      # ループバック
         # 条件付きエッジ。レビュー担当者によるレビューメモが存在する場合、グラフは修正担当者に指示されます。そうでない場合、サイクルは最終草案で終了します。
         workflow.add_conditional_edges('reviewer',
-                                       (lambda draft: "accept" if draft['review'] is None else "revise"),
-                                       {"accept": END, "revise": "reviser"})
+                                        (lambda draft: "accept" if draft['review'] is None else "revise"),
+                                        {"accept": END, "revise": "reviser"})
 
         chain = workflow.compile()
 
@@ -126,7 +149,13 @@ class EditorAgent:
         # asyncio.gather なので全部のタスクが終了するまで次には行かない
         research_results = [result['draft'] for result in await asyncio.gather(*final_drafts)]
 
-        post_proxy.update_status("[done]EditorAgent✍🏻: 各アウトライントピックについて並行してリサーチする")
+        # update_status が使えない理由は以下
+        # 各エージェントの処理をラップする関数を定義して、そこで post_proxy.progress() しているため、self.prev_content がガンガン更新されてしまい、「[doing]ResearchAgent ~~~ してリサーチする」 とは違う内容になっているから
+        # → 強制的にメッセージをアップデートするメソッドを使う
+        post_proxy.update_message(
+                                "[doing]ResearchAgent🔎 & ReviewerAgent📑 & ReviserAgent📜: 各アウトライントピックについて並行してリサーチする",
+                                "[done]ResearchAgent🔎 & ReviewerAgent📑 & ReviserAgent📜: 各アウトライントピックについて並行してリサーチする"
+                                )
 
         # リターンするときに、ResearchState に対応する Kye の Value が更新される
         return {"research_data": research_results, "post_proxy":post_proxy}

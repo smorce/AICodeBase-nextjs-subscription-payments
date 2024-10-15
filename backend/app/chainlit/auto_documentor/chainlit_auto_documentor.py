@@ -211,18 +211,20 @@ class PostEventProxy:
         }
         self.emitter.emit(status_event)
 
-    def update_message(self, message: str, is_end: bool = True):
+    def update_message(self, previous_message: str, updated_message: str, is_end: bool = True):
         """
         メッセージ更新イベントを発行します。
 
-        :param message: 更新するメッセージ
+        :param previous_message: 上書きしたい対象のメッセージ
+        :param updated_message:  上書きしたいメッセージ
         :param is_end: メッセージが終了したかどうか
         """
         assert not self.message_is_end, "Cannot update message when update is finished"
         self.message_is_end = is_end
         update_message_event = {
             'type': 'update_message',
-            'message': message,
+            'previous_message': previous_message,
+            'updated_message': updated_message,
             'role': self.role_name,
             'is_sequence': self.is_sequence,
         }
@@ -414,9 +416,24 @@ class ChainLitMessageUpdater(SessionEventHandler):
         elif event_type == 'update_message':
             # メッセージの更新を子ステップに表示
             if self.cur_step:
-                content = f"メッセージ更新: {event['message']}\n" if is_sequence else f"\nメッセージ更新: {event['message']}\n"
-                cl.run_sync(self.cur_step.stream_token(content, is_sequence))
-                self.prev_content = content
+                # 更新前のメッセージには doing が入っている想定
+                if '[doing]' in event['previous_message']:
+                    previous_message_content = event['previous_message'].replace('[doing]','')
+                    previous_message_content = span("task-item pending")(previous_message_content)
+                else:
+                    previous_message_content = event['previous_message']
+
+                # 更新後のメッセージには done が入っている想定
+                if '[done]' in event['updated_message']:
+                    updated_message_content = event['updated_message'].replace('[done]','')
+                    updated_message_content = span("task-item completed")(updated_message_content)
+                else:
+                    updated_message_content = event['updated_message']
+
+                self.cur_step.output = self.cur_step.output.replace(previous_message_content, updated_message_content)
+                cl.run_sync(self.cur_step.update())
+                self.prev_content = updated_message_content
+
                 if event.get('is_end', False):
                     # メッセージ更新が終了した場合、ステップを終了
                     cl.run_sync(self.cur_step.__aexit__(None, None, None))

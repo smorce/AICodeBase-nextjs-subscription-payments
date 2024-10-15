@@ -328,13 +328,13 @@ class PowerPointDesignerAgent:
 
 第3レベルの見出し1（###）
 
-* [100文字程度の要約]
-* [100文字程度の要約]
+* [300文字程度の要約]
+* [300文字程度の要約]
 
 第3レベルの見出し2（###）
 
-* [100文字程度の要約]
-* [100文字程度の要約]
+* [300文字程度の要約]
+* [300文字程度の要約]
 ```
 
 スライドは以下の書き出しから始めてください。
@@ -453,7 +453,7 @@ paginate: true
         md_content = self.load_latest_markdown(self.output_dir)
         # mdファイルを Marp 用コンテンツにコンバートする
         # レートリミット制限対策
-        print("デバッグ 待ちの状態……")
+        print_agent_output(f"レートリミット制限対策のため待機中...", agent="POWERPOINTDESIGNER")
         await asyncio.sleep(500)
         marp_content = self.convertToMarpContent(md_content)
         # Marp コンテンツを保存する

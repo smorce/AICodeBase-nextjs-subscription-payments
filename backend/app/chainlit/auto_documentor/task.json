@@ -1,6 +1,6 @@
 {
   "query": "",
-  "max_sections": 6,
+  "max_sections": 2,
   "publish_formats": {
     "markdown": true,
     "pdf": true,

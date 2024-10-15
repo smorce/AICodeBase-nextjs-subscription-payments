@@ -19,6 +19,12 @@
   - https://python.langchain.com/docs/how_to/callbacks_async/
 - [Mem]Gemini API で structured outputs を使い、Steps と FinalAnswer を出力する
   - プランニングプロンプトのアップデート案
+- 炎さんのプロンプトを反映してサブトピックの生成クエリの改良
+- editor.py の run_parallel_research で、新しいステップを開始して、3つのエージェントが動いている様子を見せる。残す必要ないので、普通に stream_token(aaa, True) で上書きしていけば良い。現在のステップにアクセスする方法は run_parallel_researchメソッドに @cl.step をつけて、current_step = cl.context.current_step するだけ。ここに子ステップをネストすれば良い。 current_step が親ステップになって、そこに小ステップを新規で作成する。
+  - と思ったけど current_step は不要かも。普通に async with cl.Step(name="子ステップ") as child_step を作成して stream_token(aaa, True) か step.update() するか。
+    - とりあえずやってみた。
+
+
 
 
 
@@ -26,13 +32,18 @@
 - GPTリサーチャーを組み込む
   - PowerPointDesignerAgent
     - 最新のマークダウンファイルをパワポ化しているが、複数のユーザーが同時にサービスを使う場合おかしくなるので、ResearchState に対象のファイル名を記録しておく
+      - と思ったけど、新しいセッションが .files に作成されて、作成されたフォルダだけを見に行くのでバッティングすることはなく問題ないはず
 - gpt_researcher/llm_provider/__init__.py
   - openrouter を使っていないけど、ここで読み込んでエラーが出るので API キーを設定した（init から消せばエラーは出ないはずだけど、再度使うかもしれないので一応残しておく）
 - "max_sections": 3
   - 初期計画やファイナルレポートで作られるセクション数のこと
   - 6 に増やしても良いかもしれない
-
-
+    - 6 に増やしたら内容はかなり充実したが、AIっぽい文章なので、ブログ風とか人間っぽい文章用にプロンプトの調整が必要かも
+      - 人間っぽい文書にするプロンプト
+      - https://x.com/HIROKICHI_PD/status/1792138528085901533
+      - https://www.thepromptwarrior.com/p/content-humanizer-prompt
+- run_subtopic_research するときに 連続して検索 API を使うとレートリミット制限にかかっていた。ここは有償版を使えば解消されるか？
+- 日本語翻訳するときに # が消されちゃっているのでプロンプトの調整が必要
 
 
 
@@ -68,6 +79,10 @@
 - callbacks ページの追加
   - LangChain のコールバックを使わずに Python の標準機能でコールバックとイベントハンドラーを実装
   - テストするときは isOverrideChildStreamingToken だけ変更すればOK
+- run_parallel_research で3つのエージェントを表示したい
+  - MAXセクションズ を 2 で設定してやってみる
+  - 入れ子にならない。プランナーエージェント が親ステップになっていて、Editorエージェントが親ステップになっていないせい。親ステップが変更できる仕様になってないと無理っぽい。一旦今のままでも良いか？？ それとも普通にイベントハンドラーでグルグルを表示するだけでも良いか？
+
 
 
 ## pending
