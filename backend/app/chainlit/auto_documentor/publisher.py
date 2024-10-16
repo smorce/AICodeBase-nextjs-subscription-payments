@@ -15,12 +15,16 @@ class PublisherAgent:
         self.output_dir = output_dir
 
     async def publish_research_report(self, research_state: dict, publish_formats: dict):
-        layout = self.generate_layout(research_state)
+        layout, references = self.generate_layout(research_state)
         # 英語コンテンツを保存する
         await write_to_file(os.path.join(self.output_dir, 'en_content.md'), layout)
+        # レファレンスを保存する
+        await write_to_file(os.path.join(self.output_dir, 'en_references.md'), references)
+        # 英語コンテンツ+レファレンスを保存する
+        await write_to_file(os.path.join(self.output_dir, 'en_content_on_references.md'), layout + references)
 
         # ------------------------------------------------
-        # コンテンツを日本語訳する
+        # コンテンツを日本語訳する（レファレンス情報はなし）
         # ------------------------------------------------
         # コンテンツを6000文字以下に区切る
         chunks = split_text_into_chunks(layout)
@@ -41,7 +45,7 @@ class PublisherAgent:
             """
             prompt = [{
                 "role": "system",
-                "content": "あなたは与えられた文章を極めて自然な日本語に翻訳するプログラムです。翻訳した文章は省略せずに全文を出力してください。なお、文章が日本語だった場合は None だけ出力してください。"
+                "content": "あなたは与えられた文章を極めて自然な日本語に翻訳するプログラムです。翻訳した文章は省略せずに全文を出力してください。見出し（#）も忘れずにつけてください。なお、文章が日本語だった場合は None だけ出力してください。"
             }, {
                 "role": "user",
                 "content": chunk
@@ -54,7 +58,7 @@ class PublisherAgent:
             tasks = [translate_chunk(chunk, model) for chunk in chunks]
             translated_chunks = await asyncio.gather(*tasks)
         except Exception as e:
-            print(f"日本語翻訳でエラー(チャンクが多すぎるゆえのレートリミット制限など): {e}")
+            print(f"日本語翻訳でエラー(チャンクが16個以上だった場合のレートリミット制限など): {e}")
 
         # チャンクが空行から始まる場合、翻訳するとその空行が消えてしまうので、元のチャンクと比較して、元のチャンクが空行から始まり translated_chunks が空行から始まっていない場合は translated_chunks の冒頭に空行を追加する
         for i, (original_chunk, translated_chunk) in enumerate(zip(chunks, translated_chunks)):
@@ -100,10 +104,13 @@ class PublisherAgent:
 ## {headers.get("conclusion")}
 {research_state.get('conclusion')}
 
-## {headers.get("references")}
-{references}
 """
-        return layout
+        references = f"""
+## {headers.get("references")}
+{references}"""
+
+        # 日本語訳では references はいらないので分割した
+        return layout, references
 
     async def write_report_by_formats(self, layout: str, publish_formats: dict):
         if publish_formats.get("pdf"):

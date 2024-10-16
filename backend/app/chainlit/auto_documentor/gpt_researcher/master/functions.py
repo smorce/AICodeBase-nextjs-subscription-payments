@@ -1,7 +1,7 @@
 import asyncio
 import json
 from datetime import datetime, timezone
-
+import re
 import markdown
 
 from gpt_researcher.master.prompts import *
@@ -141,21 +141,15 @@ async def get_sub_queries(query: str, agent_role_prompt: str, cfg, parent_query:
     if report_type == ReportType.DetailedReport.value or report_type == ReportType.SubtopicReport.value:
         # サブトピックはこっち。元のクエリである parent_query を入れないと訳わからないプロンプトになってしまう。
         task = f"{parent_query} - {query}"
-        # ★ 初期計画じゃない方は一旦なしにしてみる。あった方がよければ共通で AddPrompt を使う。
-        AddPrompt = ""
-    else:
-        # 初期計画はこっち
-        task = query
-        AddPrompt = "\nEnsure that at least one query addresses the task from a scientific perspective, another from a marketing perspective, another from a technology perspective, and another from an academic perspective."
-        # AddPrompt翻訳:少なくとも1つのクエリが科学的観点から、もう1つがマーケティング的観点から、もう1つが技術的観点から、もう1つが学術的観点からタスクを扱っていることを確認する。
-
-    # セルフ✗パワー(パワハラ)プロンプトに変えてみる
-    SelfPorwerPrompt = f"""You are an advanced AI assistant.
+        # 初期計画じゃない方。パワハラプロンプト。★日本に関係のある話題でもクエリが全部英語になる場合は初期計画の方と同じプロンプトを使うかも。
+        prompt = f"""You are an advanced AI assistant.
 
 ### Main Goal
 Write {max_research_iterations} google search queries to search online that form an objective opinion from the following task: "{task}".
 Use the current date if needed: {datetime.now().strftime("%B %d, %Y")}.
-Also include in the queries specified task details such as locations, names, etc.{AddPrompt}
+Also include in the queries specified task details such as locations, names, etc.
+Do not use double quotes in the search query, as they will need to be parsed later.
+日本に関係のあるテーマなら日本語で、日本以外に関係のあるテーマなら英語で検索クエリを生成してください。クエリは、その言語で自然な表現となるように工夫してください。
 
 ### Work Steps
 1. Break down the main goal into detailed, actionable sub-goals.
@@ -167,9 +161,41 @@ Also include in the queries specified task details such as locations, names, etc
 7. After these have been completed, check whether the main goal has been achieved or not.
 After these tasks are completed, the completion is announced to the user. During the completion process, the user is not asked for confirmation, but proceeds on your own.
 
-### Final Outtput
+### Output Format
 ```json
-[{max_research_iterations} Queries]
+{{
+  "search_queries": []
+}}
+```"""
+    else:
+        # 初期計画はこっち。検索クエリは日本語か英語で生成される。
+        task = query
+        prompt = f"""### 指示 ###
+あなたはこれから与えられたテーマについて、包括的な予備調査を行います。テーマは **[{task}]** です。
+
+1. **主要エンティティのリストアップ:** まず、このテーマに登場する主要なエンティティ（人物、組織、場所、物事、概念など）をリストアップしてください。
+
+2. **焦点となる情報:**  以下の観点でテーマを分析してください。
+
+    * **定義と背景:** テーマの明確な定義、歴史的背景、関連するキーワード。
+    * **主要な関係者:** テーマに影響を与える、または影響を受ける個人、グループ、組織。
+    * **多様な視点:** 賛成意見、反対意見、中立的な立場など、様々な視点からの意見や分析。
+    * **現状分析:** 現在の状況、課題、将来の展望。
+    * **関連法規・政策:** 関係する法律、規制、政策。
+    * **統計データ:** テーマに関する統計データ、トレンド、予測。
+
+3. **情報ニーズの特定と検索クエリの生成:**  エンティティやテーマ全体を理解するために必要な情報を特定し、それぞれについて多角的な視点（歴史的、社会的、経済的、技術的、文化的、倫理的、法的、環境的など）から分析するための効果的なWeb検索クエリを{max_research_iterations}つ生成してください。後でパースする必要があるため、検索クエリに二重引用符は使わないでください。必要であれば、現在の日付を使ってください：{datetime.now().strftime("%B %d, %Y")}.
+
+    * 日本に関係のあるテーマなら日本語で、日本以外に関係のあるテーマなら英語で検索クエリを生成してください。クエリは、その言語で自然な表現となるように工夫してください。
+    * 技術的な話題の場合には、その技術自体について事前に詳しい調査が必要です。技術の定義、歴史、主要な開発者、関連技術、利点と欠点、倫理的な懸念などを含めてください。
+
+### 出力形式 ###
+```json
+{{
+  "major_entities": [],
+  "focus_information": {{}},
+  "search_queries": []
+}}
 ```"""
 
     # リトライする
@@ -185,7 +211,7 @@ After these tasks are completed, the completion is announced to the user. During
                 model=cfg.fast_llm_model,                            # smart_llm_model から fast_llm_model に変更した。検索クエリを考えるのは 分析力の優れた Gemini なら得意だと思うので Flash でもいけるかも。無理なら smart_llm_model に戻す
                 messages=[
                     {"role": "system", "content": f"{agent_role_prompt}"},
-                    {"role": "user", "content": SelfPorwerPrompt}],
+                    {"role": "user", "content": prompt}],
                 temperature=1.0,                                     # 1.0 に変更
                 llm_provider=cfg.llm_provider,
                 max_tokens=cfg.fast_token_limit
@@ -193,34 +219,17 @@ After these tasks are completed, the completion is announced to the user. During
             print("response:", response)
 
 
-            def get_final_output(text):
-                keyword = "Final Output"
-                if keyword in text:
-                    index = text.find(keyword)
-                    if index != -1:
-                        return text[index + len(keyword):].strip()
-                else:
-                    # Final Output" が存在しない場合は、元のテキストをそのまま返す
-                    return text
-
-            # Final Output以降の文字列を取得
-            response = get_final_output(response)
-            print("Final Output以降", response)
-
-
-            import re
-            # Extract the JSON part from the text
-            json_pattern = re.compile(r'```json\n(\[.*?\])\n', re.DOTALL)
-            match = json_pattern.search(response)
+            # 正規表現を使って{}の中身を抽出する
+            match = re.search(r'\{.*\}', response, re.DOTALL)
 
             if match:
-                extracted_json = match.group(1)
-                print("extracted_json:", extracted_json)
+                json_str = match.group(0)
+                # JSONをパースしてPythonの辞書型に変換する
+                json_data = json.loads(json_str)
+                sub_queries = json_data["search_queries"]
+                success = True                    
             else:
                 raise ValueError("レスポンスにJSONデータがなかった。")
-
-            sub_queries = json.loads(extracted_json)
-            success = True
 
         except Exception as e:
             print(f"エラー: {e}. サブクエリの生成に失敗しました。リトライ中... ({attempts + 1}/{max_attempts})")
@@ -228,11 +237,14 @@ After these tasks are completed, the completion is announced to the user. During
 
 
     if not success:
+        print("サブクエリの生成に失敗しました。最大リトライ回数を超えました。")
+        import sys
+        sys.exit(1)
         raise ValueError("サブクエリの生成に失敗しました。最大リトライ回数を超えました。")
 
 
     print()
-    print("JSONでパースした内容")
+    print("JSONでパースした内容 sub_queries:")
     print(sub_queries)
 
     return sub_queries
@@ -390,7 +402,7 @@ async def generate_report(
             llm_provider=cfg.llm_provider,
             stream=True,
             websocket=websocket,
-            max_tokens=cfg.smart_token_limit    # 適当に4万まで増やしたけど足りるか？？ 足りなければ8万まで増やす
+            max_tokens=cfg.smart_token_limit
         )
     except Exception as e:
         print(f"{Fore.RED}Error in generate_report: {e}{Style.RESET_ALL}")

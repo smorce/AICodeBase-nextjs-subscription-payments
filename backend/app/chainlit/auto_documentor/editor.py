@@ -104,22 +104,24 @@ class EditorAgent:
 
         # 各エージェントの処理をラップする関数を定義
         async def researcher_with_print(state):
-            post_proxy.progress("ResearchAgent🔎 の処理が開始しました。処理中です……")
+            # ★非同期で順番が異なる可能性があり、チェックマークがつかずに グルグル することがある
+            post_proxy.update_status("[doing]ResearchAgent🔎: アウトライントピックを並列リサーチする")
             result = await research_agent.run_depth_research(state)
-            post_proxy.progress(f"ResearchAgent🔎 の処理が完了しました。デバッグ 結果：{result['draft']}")
+            post_proxy.update_status("[done]ResearchAgent🔎: アウトライントピックを並列リサーチする")
             return result
 
         def reviewer_with_print(state):
-            post_proxy.progress("ReviewerAgent📑 の処理が開始しました。処理中です……")
+            # task.json でガイドラインが False ならレビュー結果は None になる
+            post_proxy.update_status("[doing]ReviewerAgent📑: レビューをする")
             result = reviewer_agent.run(state)
-            post_proxy.progress(f"ReviewerAgent📑 の処理が完了しました。デバッグ 結果：{result['review']}")
+            post_proxy.update_status(f"[done]ReviewerAgent📑: レビューをする")
             return result
 
         def reviser_with_print(state):
             # reviewer の結果が None なら 校閲者 は呼び出されない
-            post_proxy.progress("ReviserAgent📜 の処理が開始しました。処理中です……")
+            post_proxy.update_status("[doing]ReviserAgent📜: 校正する")
             result = reviser_agent.run(state)
-            post_proxy.progress(f"ReviserAgent📜 の処理が完了しました。デバッグ 結果：{result['draft']}, {result['revision_notes']}")
+            post_proxy.update_status("[done]ReviserAgent📜: 校正する")
             return result
 
         # ワークフローを定義
@@ -150,7 +152,7 @@ class EditorAgent:
         research_results = [result['draft'] for result in await asyncio.gather(*final_drafts)]
 
         # update_status が使えない理由は以下
-        # 各エージェントの処理をラップする関数を定義して、そこで post_proxy.progress() しているため、self.prev_content がガンガン更新されてしまい、「[doing]ResearchAgent ~~~ してリサーチする」 とは違う内容になっているから
+        # 各エージェントの処理をラップする関数を定義して、そこで post_proxy.update_status() しているため、self.prev_content がガンガン更新されてしまい、「[doing]ResearchAgent ~~~ してリサーチする」 とは違う内容になっているから
         # → 強制的にメッセージをアップデートするメソッドを使う
         post_proxy.update_message(
                                 "[doing]ResearchAgent🔎 & ReviewerAgent📑 & ReviserAgent📜: 各アウトライントピックについて並行してリサーチする",

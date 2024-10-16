@@ -442,14 +442,14 @@ paginate: true
 
 
     async def write_report_by_formats(self, md_content, output_dir):
-        await write_md_to_ppt(md_content, output_dir)           # Marpで実装した。他の関数と合わせて非同期にした。
+        await write_md_to_ppt(md_content, output_dir)           # 他の関数と合わせて非同期にした。
 
 
     async def run(self, post_proxy: PostEventProxy):
         print_agent_output(f"パワーポイントを作成中...", agent="POWERPOINTDESIGNER")
         post_proxy.update_status("[doing]PowerPointDesignerAgent📰: Pptx を作成する")
 
-        # mdファイルを開いて内容を読み込む
+        # mdファイル(日本語コンテンツ)を開いて内容を読み込む
         md_content = self.load_latest_markdown(self.output_dir)
         # mdファイルを Marp 用コンテンツにコンバートする
         # レートリミット制限対策
