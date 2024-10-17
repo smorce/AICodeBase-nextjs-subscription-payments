@@ -89,7 +89,7 @@ class EditorAgent:
         # --------------------------------------------
         # サブグラフで動かすエージェント3つ
         ##### 研究者 (gpt-researcher) - サブトピックについて詳細な調査を行い、草稿を書きます。
-        ##### レビュー担当者           - 一連の条件に基づいて下書きの正確性を検証し、フィードバックを提供します。
+        ##### レビュー担当者           - follow_guidelines に基づいて下書きの正確性を検証し、フィードバックを提供します。
         ##### 校閲者                  - レビュー担当者のフィードバックに基づいて満足のいく内容になるまで下書きを修正します。
         # --------------------------------------------
         research_agent = ResearchAgent()
@@ -100,29 +100,70 @@ class EditorAgent:
         title = research_state.get("title")                # これは初期計画及びレポートのタイトルになる
         post_proxy = research_state.get("post_proxy")
 
+        post_proxy.progress(f"デバッグ サブトピック(アウトライントピック)のリスト: {queries}\n")
+
+
         post_proxy.update_status("[doing]ResearchAgent🔎 & ReviewerAgent📑 & ReviserAgent📜: 各アウトライントピックについて並行してリサーチする")
+
+
+        # 進捗表示（使うかもしれないので残しておく）
+        # progress_updated = 0
+        # total_progress = len(queries)
+        # # 進捗パーセントを計算（初回は10%から始める）
+        # progress_percentage = 10
+        # # 進捗バーを作成
+        # progress_bar = '█' * progress_updated + '░' * (total_progress - progress_updated)
+        # # 進捗バーとパーセントを組み合わせた文字列を作成
+        # progress_string = f'全体の進捗(目安): {progress_bar} {progress_percentage}%'
+        # # post_proxy.progress(progress_string)
+
 
         # 各エージェントの処理をラップする関数を定義
         async def researcher_with_print(state):
-            # ★非同期で順番が異なる可能性があり、チェックマークがつかずに グルグル することがある
-            post_proxy.update_status("[doing]ResearchAgent🔎: アウトライントピックを並列リサーチする")
+            # nonlocal progress_updated, total_progress
+            post_proxy.update_status("[doing]░░░░░ResearchAgent🔎: アウトライントピックを並列リサーチする")
             result = await research_agent.run_depth_research(state)
-            post_proxy.update_status("[done]ResearchAgent🔎: アウトライントピックを並列リサーチする")
+            # post_proxy.update_status メソッドは並列処理を考慮していないので順番がぐちゃぐちゃになると表示がおかしくなるため、update_message メソッドで強制的に上書きする
+            post_proxy.update_message(
+                                    "[doing]░░░░░ResearchAgent🔎: アウトライントピックを並列リサーチする",
+                                    "[done]░░░░░ResearchAgent🔎: アウトライントピックを並列リサーチする",
+                                    False
+                                    )
+            # progress_updated += 1
+            # # 進捗パーセントを計算
+            # progress_percentage = int((progress_updated / total_progress) * 100)
+            # # 進捗バーを作成
+            # progress_bar = '█' * progress_updated + '░' * (total_progress - progress_updated)
+            # # 進捗バーとパーセントを組み合わせた文字列を作成
+            # progress_string = f'全体の進捗(目安): {progress_bar} {progress_percentage}%'
+            # post_proxy.prev_content_delete()
+            # post_proxy.progress(progress_string)
             return result
 
         def reviewer_with_print(state):
+            # nonlocal a
             # task.json でガイドラインが False ならレビュー結果は None になる
-            post_proxy.update_status("[doing]ReviewerAgent📑: レビューをする")
+            post_proxy.update_status("[doing]░░░░░ReviewerAgent📑: レビューをする")
             result = reviewer_agent.run(state)
-            post_proxy.update_status(f"[done]ReviewerAgent📑: レビューをする")
+            post_proxy.update_message(
+                                    "[doing]░░░░░ReviewerAgent📑: レビューをする",
+                                    "[done]░░░░░ReviewerAgent📑: レビューをする",
+                                    False
+                                    )
             return result
 
         def reviser_with_print(state):
             # reviewer の結果が None なら 校閲者 は呼び出されない
-            post_proxy.update_status("[doing]ReviserAgent📜: 校正する")
+            post_proxy.update_status("[doing]░░░░░ReviserAgent📜: 校正する")
             result = reviser_agent.run(state)
-            post_proxy.update_status("[done]ReviserAgent📜: 校正する")
+            post_proxy.update_message(
+                                    "[doing]░░░░░ReviserAgent📜: 校正する",
+                                    "[done]░░░░░ReviserAgent📜: 校正する",
+                                    False
+                                    )
             return result
+
+
 
         # ワークフローを定義
         workflow = StateGraph(DraftState)
@@ -151,13 +192,16 @@ class EditorAgent:
         # asyncio.gather なので全部のタスクが終了するまで次には行かない
         research_results = [result['draft'] for result in await asyncio.gather(*final_drafts)]
 
+
         # update_status が使えない理由は以下
         # 各エージェントの処理をラップする関数を定義して、そこで post_proxy.update_status() しているため、self.prev_content がガンガン更新されてしまい、「[doing]ResearchAgent ~~~ してリサーチする」 とは違う内容になっているから
         # → 強制的にメッセージをアップデートするメソッドを使う
         post_proxy.update_message(
                                 "[doing]ResearchAgent🔎 & ReviewerAgent📑 & ReviserAgent📜: 各アウトライントピックについて並行してリサーチする",
-                                "[done]ResearchAgent🔎 & ReviewerAgent📑 & ReviserAgent📜: 各アウトライントピックについて並行してリサーチする"
+                                "[done]ResearchAgent🔎 & ReviewerAgent📑 & ReviserAgent📜: 各アウトライントピックについて並行してリサーチする",
+                                False
                                 )
+
 
         # リターンするときに、ResearchState に対応する Kye の Value が更新される
         return {"research_data": research_results, "post_proxy":post_proxy}

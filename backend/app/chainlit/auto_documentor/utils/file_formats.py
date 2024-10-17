@@ -42,22 +42,22 @@ def split_text_into_chunks(text: str, max_length: int = 6000) -> list:
             # 最大長を超える場合の処理
             if last_breakpoint > 0:
                 # 直前のブレークポイントまでをチャンクとして追加
-                chunks.append(current_chunk[:last_breakpoint])
-                current_chunk = current_chunk[last_breakpoint:]
+                chunks.append(current_chunk[:last_breakpoint].rstrip('\n'))
+                # ブレークポイント以降のテキストを新しいチャンクの開始とする
+                current_chunk = current_chunk[last_breakpoint:].lstrip('\n')
                 last_breakpoint = 0
             else:
                 # ブレークポイントがない場合は現在のチャンクをそのまま追加
-                chunks.append(current_chunk)
+                chunks.append(current_chunk.rstrip('\n'))
                 current_chunk = ''
             # 新しい行を現在のチャンクに追加
             current_chunk += (line + '\n')
 
     # 残りのテキストがあれば最後のチャンクとして追加
     if current_chunk:
-        chunks.append(current_chunk)
+        chunks.append(current_chunk.rstrip('\n'))
 
     return chunks
-
 
 
 async def write_to_file(filename: str, text: str) -> None:
@@ -368,7 +368,7 @@ async def write_md_to_ppt(text: str, path: str) -> str:
                         p = text_frame.add_paragraph()
                         p.text = ''
                         p.level = 0
-                    
+                        
                     # 最後の空行を削除
                     if text_frame.paragraphs and text_frame.paragraphs[-1].text == '':
                         text_frame._element.remove(text_frame.paragraphs[-1]._p)
